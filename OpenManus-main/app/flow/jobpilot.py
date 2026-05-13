@@ -15,15 +15,17 @@ class JobPilotFlow(BaseFlow):
 
         coordinator_plan = await coordinator.run(
             f"""
-User request:
+[User Request]
 {input_text}
 
-Create a concise job-application execution brief for downstream specialist agents.
+Create a concise, grounded job-application execution brief for downstream specialist agents.
+Include confirmed facts, unknowns, and role-specific priorities.
 """
         )
 
         jd_output = await jd_agent.run(
             f"""
+[Grounding Context]
 User request:
 {input_text}
 
@@ -34,16 +36,23 @@ Coordinator brief:
 
         company_output = await company_agent.run(
             f"""
+[Grounding Context]
 User request:
 {input_text}
 
 Coordinator brief:
 {coordinator_plan}
+
+JD analysis:
+{jd_output}
+
+Prioritize role-relevant findings and preserve concrete evidence from retrieved results.
 """
         )
 
         resume_output = await resume_agent.run(
             f"""
+[Grounding Context]
 User request:
 {input_text}
 
@@ -52,11 +61,17 @@ Coordinator brief:
 
 JD analysis:
 {jd_output}
+
+Company research:
+{company_output}
+
+Use provided candidate background directly; avoid hypothetical "if your resume..." guidance when details exist.
 """
         )
 
         interview_output = await interview_agent.run(
             f"""
+[Grounding Context]
 User request:
 {input_text}
 
@@ -66,14 +81,22 @@ Coordinator brief:
 JD analysis:
 {jd_output}
 
+Company research:
+{company_output}
+
 Resume optimization:
 {resume_output}
+
+Tailor questions to this role/company context and provided candidate background.
 """
         )
 
         review_output = await review_agent.run(
             f"""
-Review this draft package for consistency, realism, and quality:
+[User Request]
+{input_text}
+
+Review this draft package with strict grounding QA. Flag generic statements, unsupported claims, and specificity loss.
 
 [Coordinator Brief]
 {coordinator_plan}
@@ -94,7 +117,7 @@ Review this draft package for consistency, realism, and quality:
 
         report = await report_agent.run(
             f"""
-Create the final structured JobPilot report from these materials:
+Create the final structured JobPilot report from these materials. Preserve key specifics and evidence anchors.
 
 [User Request]
 {input_text}
