@@ -1,13 +1,15 @@
 import importlib
 from pathlib import Path
 
+import pytest
 
-def _ensure_test_config() -> None:
+
+def _write_test_config() -> tuple[Path, bool]:
     project_root = Path(__file__).resolve().parents[1]
     config_dir = project_root / "config"
     config_file = config_dir / "config.toml"
     if config_file.exists():
-        return
+        return config_file, False
 
     config_file.write_text(
         """
@@ -35,10 +37,18 @@ daytona_api_key = "test-daytona-key"
         + "\n",
         encoding="utf-8",
     )
+    return config_file, True
+
+
+@pytest.fixture(scope="module", autouse=True)
+def temp_config_file():
+    config_file, created = _write_test_config()
+    yield
+    if created and config_file.exists():
+        config_file.unlink()
 
 
 def test_jobpilot_agents_registered():
-    _ensure_test_config()
     jobpilot = importlib.import_module("app.agent.jobpilot")
 
     assert jobpilot.CoordinatorAgent.model_fields["name"].default == "Coordinator"
@@ -57,7 +67,6 @@ def test_jobpilot_agents_registered():
 
 
 def test_jobpilot_flow_factory_registration():
-    _ensure_test_config()
     flow_factory_module = importlib.import_module("app.flow.flow_factory")
     jobpilot_flow_module = importlib.import_module("app.flow.jobpilot")
 
@@ -70,7 +79,6 @@ def test_jobpilot_flow_factory_registration():
 
 
 def test_runflow_settings_default_for_jobpilot():
-    _ensure_test_config()
     config_module = importlib.import_module("app.config")
 
     runflow_settings = config_module.RunflowSettings()

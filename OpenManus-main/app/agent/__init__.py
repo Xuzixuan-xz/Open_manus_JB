@@ -16,7 +16,12 @@ from app.agent.toolcall import ToolCallAgent
 try:
     from app.agent.browser import BrowserAgent
 except ModuleNotFoundError:  # optional dependency (e.g., daytona/browser runtime)
-    BrowserAgent = None
+    class BrowserAgent:  # type: ignore[no-redef]
+        def __init__(self, *args, **kwargs):
+            raise ModuleNotFoundError(
+                "BrowserAgent dependencies are not installed. "
+                "Install optional browser/daytona dependencies to use BrowserAgent."
+            )
 
 
 __all__ = [
@@ -25,6 +30,7 @@ __all__ = [
     "SWEAgent",
     "ToolCallAgent",
     "MCPAgent",
+    "BrowserAgent",
     "CoordinatorAgent",
     "JDAnalysisAgent",
     "ResumeOptimizationAgent",
@@ -33,6 +39,3 @@ __all__ = [
     "ReviewAgent",
     "ReportAgent",
 ]
-
-if BrowserAgent is not None:
-    __all__.append("BrowserAgent")
