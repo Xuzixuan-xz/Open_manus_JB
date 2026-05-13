@@ -15,7 +15,8 @@ class JobPilotFlow(BaseFlow):
 
         coordinator_plan = await coordinator.run(
             f"""
-[User Request]
+[Grounding Context]
+User request:
 {input_text}
 
 Create a concise, grounded job-application execution brief for downstream specialist agents.
@@ -93,7 +94,8 @@ Tailor questions to this role/company context and provided candidate background.
 
         review_output = await review_agent.run(
             f"""
-[User Request]
+[Grounding Context]
+User request:
 {input_text}
 
 Review this draft package with strict grounding QA. Flag generic statements, unsupported claims, and specificity loss.

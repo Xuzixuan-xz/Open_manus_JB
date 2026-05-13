@@ -89,7 +89,10 @@ def test_jobpilot_prompts_enforce_grounding():
 
     assert "Reject generic boilerplate plans" in prompts.COORDINATOR_SYSTEM_PROMPT
     assert "Prioritize role-relevant findings" in prompts.COMPANY_RESEARCH_SYSTEM_PROMPT
-    assert "avoid hypothetical" in prompts.RESUME_OPTIMIZATION_SYSTEM_PROMPT
+    assert (
+        'avoid hypothetical phrasing like "if your resume includes..."'
+        in prompts.RESUME_OPTIMIZATION_SYSTEM_PROMPT
+    )
     assert (
         "tailored to the target role/company context" in prompts.INTERVIEW_SYSTEM_PROMPT
     )
@@ -141,9 +144,11 @@ async def test_jobpilot_flow_passes_grounding_context():
     assert "Coordinator brief:\ncoordinator-plan" in jd.calls[0]
     assert "JD analysis:\njd-analysis" in company.calls[0]
     assert "Company research:\ncompany-research" in resume.calls[0]
-    assert 'avoid hypothetical "if your resume..." guidance' in resume.calls[0]
+    assert "User request:\nTarget role request" in resume.calls[0]
     assert "Company research:\ncompany-research" in interview.calls[0]
     assert "Resume optimization:\nresume-optimization" in interview.calls[0]
-    assert "[User Request]\nTarget role request" in review.calls[0]
-    assert "strict grounding QA" in review.calls[0]
+    assert "[Grounding Context]\nUser request:\nTarget role request" in review.calls[0]
+    assert "[Coordinator Brief]\ncoordinator-plan" in review.calls[0]
+    assert "[JD Analysis]\njd-analysis" in review.calls[0]
+    assert "[User Request]\nTarget role request" in report.calls[0]
     assert "[Review Findings]\nreview-findings" in report.calls[0]

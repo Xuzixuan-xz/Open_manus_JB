@@ -104,7 +104,7 @@ Identify generic statements, unsupported claims, contradictions, and lost role-s
 REVIEW_NEXT_STEP_PROMPT = """
 Review all draft outputs and provide:
 - Grounding audit (what is supported by user/JD/search evidence vs unsupported)
-- Genericness audit (flag boilerplate language and where specificity was lost)
+- Generic-content audit (flag boilerplate language and where specificity was lost)
 - Consistency checks across all sections
 - High-severity fixes required before final report
 - Corrective recommendations with concrete rewrite directions
