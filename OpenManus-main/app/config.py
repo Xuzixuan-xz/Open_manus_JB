@@ -64,6 +64,9 @@ class RunflowSettings(BaseModel):
     use_data_analysis_agent: bool = Field(
         default=False, description="Enable data analysis agent in run flow"
     )
+    use_jobpilot_flow: bool = Field(
+        default=False, description="Enable JobPilot job/internship multi-agent flow"
+    )
 
 
 class BrowserSettings(BaseModel):

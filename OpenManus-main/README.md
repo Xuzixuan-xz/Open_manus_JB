@@ -148,6 +148,21 @@ use_data_analysis_agent = true     # Disabled by default, change to true to acti
 ```
 In addition, you need to install the relevant dependencies to ensure the agent runs properly: [Detailed Installation Guide](app/tool/chart_visualization/README.md##Installation)
 
+For a job/internship application scenario, OpenManus also provides a JobPilot multi-agent flow with:
+- `CoordinatorAgent`
+- `JDAnalysisAgent`
+- `ResumeOptimizationAgent`
+- `InterviewAgent`
+- `CompanyResearchAgent`
+- `ReviewAgent`
+- `ReportAgent`
+
+Enable it in `config.toml`:
+```toml
+[runflow]
+use_jobpilot_flow = true
+```
+
 ## How to contribute
 
 We welcome any friendly suggestions and helpful contributions! Just create issues or submit pull requests.
