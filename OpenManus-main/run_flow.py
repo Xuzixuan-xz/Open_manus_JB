@@ -2,6 +2,15 @@ import asyncio
 import time
 
 from app.agent.data_analysis import DataAnalysis
+from app.agent.jobpilot import (
+    CompanyResearchAgent,
+    CoordinatorAgent,
+    InterviewAgent,
+    JDAnalysisAgent,
+    ReportAgent,
+    ResumeOptimizationAgent,
+    ReviewAgent,
+)
 from app.agent.manus import Manus
 from app.config import config
 from app.flow.flow_factory import FlowFactory, FlowType
@@ -9,11 +18,24 @@ from app.logger import logger
 
 
 async def run_flow():
-    agents = {
-        "manus": Manus(),
-    }
-    if config.run_flow_config.use_data_analysis_agent:
-        agents["data_analysis"] = DataAnalysis()
+    if config.run_flow_config.use_jobpilot_flow:
+        agents = {
+            "coordinator": CoordinatorAgent(),
+            "jd_analysis": JDAnalysisAgent(),
+            "resume_optimization": ResumeOptimizationAgent(),
+            "interview": InterviewAgent(),
+            "company_research": CompanyResearchAgent(),
+            "review": ReviewAgent(),
+            "report": ReportAgent(),
+        }
+        flow_type = FlowType.JOBPILOT
+    else:
+        agents = {
+            "manus": Manus(),
+        }
+        if config.run_flow_config.use_data_analysis_agent:
+            agents["data_analysis"] = DataAnalysis()
+        flow_type = FlowType.PLANNING
     try:
         prompt = input("Enter your prompt: ")
 
@@ -22,7 +44,7 @@ async def run_flow():
             return
 
         flow = FlowFactory.create_flow(
-            flow_type=FlowType.PLANNING,
+            flow_type=flow_type,
             agents=agents,
         )
         logger.warning("Processing your request...")
