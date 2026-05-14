@@ -364,6 +364,7 @@ class Config:
     @property
     def workspace_root(self) -> Path:
         """Get the workspace root directory"""
+        WORKSPACE_ROOT.mkdir(parents=True, exist_ok=True)
         return WORKSPACE_ROOT
 
     @property

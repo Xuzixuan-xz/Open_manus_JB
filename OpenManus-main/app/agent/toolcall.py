@@ -2,7 +2,7 @@ import asyncio
 import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from app.agent.react import ReActAgent
 from app.exceptions import TokenLimitExceeded
@@ -32,6 +32,7 @@ class ToolCallAgent(ReActAgent):
 
     tool_calls: List[ToolCall] = Field(default_factory=list)
     _current_base64_image: Optional[str] = None
+    _tool_failure_counts: Dict[str, int] = PrivateAttr(default_factory=dict)
 
     max_steps: int = 30
     max_observe: Optional[Union[int, bool]] = None
@@ -183,6 +184,14 @@ class ToolCallAgent(ReActAgent):
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = await self.available_tools.execute(name=name, tool_input=args)
+            tool_call_key = f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=False)}"
+
+            if getattr(result, "error", None):
+                self._tool_failure_counts[tool_call_key] = (
+                    self._tool_failure_counts.get(tool_call_key, 0) + 1
+                )
+            else:
+                self._tool_failure_counts.pop(tool_call_key, None)
 
             # Handle special tools
             await self._handle_special_tool(name=name, result=result)
@@ -198,6 +207,11 @@ class ToolCallAgent(ReActAgent):
                 if result
                 else f"Cmd `{name}` completed with no output"
             )
+            if self._tool_failure_counts.get(tool_call_key, 0) >= 2:
+                observation += (
+                    "\nHint: This exact tool call has failed multiple times. "
+                    "Do not retry it unchanged—inspect available paths or create missing files before retrying."
+                )
 
             return observation
         except json.JSONDecodeError:

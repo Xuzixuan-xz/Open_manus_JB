@@ -48,13 +48,20 @@ class LocalFileOperator(FileOperator):
         """Read content from a local file."""
         try:
             return Path(path).read_text(encoding=self.encoding)
+        except UnicodeDecodeError:
+            raise ToolError(
+                f"Failed to read {path}: file is not valid UTF-8 text. "
+                "Use a text file path encoded in UTF-8."
+            ) from None
         except Exception as e:
             raise ToolError(f"Failed to read {path}: {str(e)}") from None
 
     async def write_file(self, path: PathLike, content: str) -> None:
         """Write content to a local file."""
         try:
-            Path(path).write_text(content, encoding=self.encoding)
+            path_obj = Path(path)
+            path_obj.parent.mkdir(parents=True, exist_ok=True)
+            path_obj.write_text(content, encoding=self.encoding)
         except Exception as e:
             raise ToolError(f"Failed to write to {path}: {str(e)}") from None
 
@@ -78,10 +85,17 @@ class LocalFileOperator(FileOperator):
             stdout, stderr = await asyncio.wait_for(
                 process.communicate(), timeout=timeout
             )
+            try:
+                stdout_text = stdout.decode()
+                stderr_text = stderr.decode()
+            except UnicodeDecodeError:
+                raise ToolError(
+                    f"Command output could not be decoded as UTF-8: {cmd}"
+                ) from None
             return (
                 process.returncode or 0,
-                stdout.decode(),
-                stderr.decode(),
+                stdout_text,
+                stderr_text,
             )
         except asyncio.TimeoutError as exc:
             try:

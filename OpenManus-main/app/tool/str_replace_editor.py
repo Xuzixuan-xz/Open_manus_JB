@@ -175,7 +175,8 @@ class StrReplaceEditor(BaseTool):
         if command != "create":
             if not await operator.exists(path):
                 raise ToolError(
-                    f"The path {path} does not exist. Please provide a valid path."
+                    f"The path {path} does not exist. "
+                    "Use `view` on an existing directory to inspect files, or use `create` to create a new file first."
                 )
 
             # Check if path is a directory
