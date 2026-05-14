@@ -92,10 +92,15 @@ class LocalFileOperator(FileOperator):
             )
             try:
                 stdout_text = stdout.decode()
+            except UnicodeDecodeError:
+                raise ToolError(
+                    f"Command stdout could not be decoded as UTF-8: {cmd}"
+                ) from None
+            try:
                 stderr_text = stderr.decode()
             except UnicodeDecodeError:
                 raise ToolError(
-                    f"Command output could not be decoded as UTF-8: {cmd}"
+                    f"Command stderr could not be decoded as UTF-8: {cmd}"
                 ) from None
             return (
                 process.returncode or 0,

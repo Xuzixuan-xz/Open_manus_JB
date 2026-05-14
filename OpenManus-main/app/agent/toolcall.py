@@ -185,14 +185,16 @@ class ToolCallAgent(ReActAgent):
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = await self.available_tools.execute(name=name, tool_input=args)
-            tool_call_key = f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=True)}"
+            tool_call_signature = (
+                f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=True)}"
+            )
 
             if getattr(result, "error", None):
-                self._tool_failure_counts[tool_call_key] = (
-                    self._tool_failure_counts.get(tool_call_key, 0) + 1
+                self._tool_failure_counts[tool_call_signature] = (
+                    self._tool_failure_counts.get(tool_call_signature, 0) + 1
                 )
             else:
-                self._tool_failure_counts.pop(tool_call_key, None)
+                self._tool_failure_counts.pop(tool_call_signature, None)
 
             # Handle special tools
             await self._handle_special_tool(name=name, result=result)
@@ -209,7 +211,7 @@ class ToolCallAgent(ReActAgent):
                 else f"Cmd `{name}` completed with no output"
             )
             if (
-                self._tool_failure_counts.get(tool_call_key, 0)
+                self._tool_failure_counts.get(tool_call_signature, 0)
                 >= REPEATED_FAILURE_HINT_THRESHOLD
             ):
                 observation += (
