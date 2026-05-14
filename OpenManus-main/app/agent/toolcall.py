@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field
 
@@ -175,6 +175,10 @@ class ToolCallAgent(ReActAgent):
         try:
             # Parse arguments
             args = json.loads(command.function.arguments or "{}")
+            if not isinstance(args, dict):
+                return f"Error: Arguments for '{name}' must be a JSON object"
+
+            name, args = self._normalize_tool_call(name=name, args=args)
 
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
@@ -206,6 +210,47 @@ class ToolCallAgent(ReActAgent):
             error_msg = f"⚠️ Tool '{name}' encountered a problem: {str(e)}"
             logger.exception(error_msg)
             return f"Error: {error_msg}"
+
+    def _normalize_tool_call(self, name: str, args: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        """Normalize obvious malformed tool invocations into safe calls."""
+        if name != "browser_use":
+            return name, args
+
+        if "action" in args:
+            if args.get("action") == "web_search" and "query" not in args and "web_search" in args:
+                normalized_args = dict(args)
+                normalized_args["query"] = normalized_args.pop("web_search")
+                logger.warning(
+                    "Normalized malformed browser_use call by mapping 'web_search' to 'query'"
+                )
+                return name, normalized_args
+            return name, args
+
+        if "web_search" in args:
+            query = args.get("web_search")
+            remaining = {k: v for k, v in args.items() if k != "web_search"}
+
+            if "web_search" in self.available_tools.tool_map and isinstance(query, str):
+                rerouted_args = {"query": query, **remaining}
+                logger.warning(
+                    "Rerouting malformed browser_use call with web_search args to web_search tool"
+                )
+                return "web_search", rerouted_args
+
+            normalized_args = {"action": "web_search", "query": query, **remaining}
+            logger.warning(
+                "Normalized malformed browser_use call missing action into browser_use web_search action"
+            )
+            return name, normalized_args
+
+        if "query" in args:
+            normalized_args = {"action": "web_search", **args}
+            logger.warning(
+                "Normalized browser_use call missing action by defaulting to web_search action"
+            )
+            return name, normalized_args
+
+        return name, args
 
     async def _handle_special_tool(self, name: str, result: Any, **kwargs):
         """Handle special tool execution and state changes"""
