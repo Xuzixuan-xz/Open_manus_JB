@@ -19,6 +19,11 @@ class JobPilotFlow(BaseFlow):
 User request:
 {input_text}
 
+Grounding policy:
+- The user request above is the source of truth for JD/company/background facts.
+- Do not label explicit user-provided facts as unknown.
+- Use failure only if the request is truly unusable.
+
 Create a concise, grounded job-application execution brief for downstream specialist agents.
 Include confirmed facts, unknowns, and role-specific priorities.
 """
@@ -30,6 +35,10 @@ Include confirmed facts, unknowns, and role-specific priorities.
 User request:
 {input_text}
 
+Grounding policy:
+- Treat explicit JD/background details in the user request as known.
+- If details exist, proceed with analysis instead of terminating as failure.
+
 Coordinator brief:
 {coordinator_plan}
 """
@@ -40,6 +49,11 @@ Coordinator brief:
 [Grounding Context]
 User request:
 {input_text}
+
+Grounding policy:
+- Prefer company/role/stack terms from user request and coordinator brief.
+- If JD analysis is weak, recover keywords directly from user request.
+- Avoid repetitive generic searches.
 
 Coordinator brief:
 {coordinator_plan}

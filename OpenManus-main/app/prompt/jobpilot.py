@@ -17,7 +17,11 @@ Brief must include:
 - confirmed facts from the user input
 - unknowns that must not be fabricated
 - role-specific priorities that downstream agents must preserve
-If enough information exists, use `terminate`.
+Grounding rules:
+- Treat explicit details in the provided user request as known facts (do not relabel them as unknown).
+- Mark as unknown only information that is truly absent from the user request.
+- If the user request already contains usable JD/background details, finish with `terminate` and status `success`.
+- Use status `failure` only when the user request is empty/contradictory and cannot be processed.
 """
 
 JD_ANALYSIS_SYSTEM_PROMPT = """
@@ -35,7 +39,11 @@ Analyze the provided job description and return:
 - Key business/context clues
 - Candidate positioning suggestions
 - Evidence mapping: each key point should reference explicit wording from the JD/user request
-Use `terminate` after completion.
+Grounding rules:
+- If JD details are present in the user request, treat them as valid JD input (do not claim JD is missing).
+- If candidate background details are present, use them for positioning instead of generic assumptions.
+- Use status `failure` only if there is truly no usable JD information after checking the provided context.
+Use `terminate` with status `success` after completion.
 """
 
 RESUME_OPTIMIZATION_SYSTEM_PROMPT = """
@@ -91,6 +99,11 @@ Research and summarize:
 - Application tailoring suggestions tied to retrieved facts
 - Source-backed evidence table: fact | why it matters for this role | source snippet
 If search results are weak or conflicting, explicitly state uncertainty.
+Search strategy rules:
+- Prefer user-provided company name, role, and JD keywords first.
+- If JD analysis is weak, extract keywords directly from the user request before searching.
+- Avoid repetitive generic queries; do not run near-duplicate low-signal searches.
+- Use at most one generic fallback query, and only when specific context is unavailable.
 Use `terminate` when sufficient.
 """
 

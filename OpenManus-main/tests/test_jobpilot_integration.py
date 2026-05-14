@@ -98,6 +98,15 @@ def test_jobpilot_prompts_enforce_grounding():
     )
     assert "strict QA and grounding auditor" in prompts.REVIEW_SYSTEM_PROMPT
     assert "Preserve high-value specifics" in prompts.REPORT_SYSTEM_PROMPT
+    assert (
+        "do not relabel them as unknown"
+        in prompts.COORDINATOR_NEXT_STEP_PROMPT
+    )
+    assert "do not claim JD is missing" in prompts.JD_ANALYSIS_NEXT_STEP_PROMPT
+    assert (
+        "Avoid repetitive generic queries"
+        in prompts.COMPANY_RESEARCH_NEXT_STEP_PROMPT
+    )
 
 
 @pytest.mark.asyncio
@@ -141,8 +150,11 @@ async def test_jobpilot_flow_passes_grounding_context():
         "confirmed facts, unknowns, and role-specific priorities"
         in coordinator.calls[0]
     )
+    assert "Do not label explicit user-provided facts as unknown." in coordinator.calls[0]
     assert "Coordinator brief:\ncoordinator-plan" in jd.calls[0]
+    assert "Treat explicit JD/background details in the user request as known." in jd.calls[0]
     assert "JD analysis:\njd-analysis" in company.calls[0]
+    assert "Avoid repetitive generic searches." in company.calls[0]
     assert "Company research:\ncompany-research" in resume.calls[0]
     assert "User request:\nTarget role request" in resume.calls[0]
     assert "Company research:\ncompany-research" in interview.calls[0]
