@@ -33,7 +33,7 @@ class ToolCallAgent(ReActAgent):
 
     tool_calls: List[ToolCall] = Field(default_factory=list)
     _current_base64_image: Optional[str] = None
-    _tool_failure_counts: Dict[str, int] = PrivateAttr(default_factory=dict)
+    _tool_failure_counts: Dict[Tuple[str, str], int] = PrivateAttr(default_factory=dict)
 
     max_steps: int = 30
     max_observe: Optional[Union[int, bool]] = None
@@ -186,7 +186,8 @@ class ToolCallAgent(ReActAgent):
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = await self.available_tools.execute(name=name, tool_input=args)
             tool_call_signature = (
-                f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=True)}"
+                name,
+                json.dumps(args, sort_keys=True, ensure_ascii=True),
             )
 
             if getattr(result, "error", None):
@@ -216,7 +217,7 @@ class ToolCallAgent(ReActAgent):
             ):
                 observation += (
                     "\nHint: This exact tool call has failed multiple times. "
-                    "Do not retry it unchanged—inspect available paths or create missing files before retrying."
+                    "Review the error and adjust your approach before retrying."
                 )
 
             return observation

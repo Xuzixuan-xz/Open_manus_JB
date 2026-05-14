@@ -60,14 +60,14 @@ def temp_config_file():
 
 
 @pytest.mark.asyncio
-async def test_local_file_operator_creates_missing_parent_directories(tmp_path):
+async def test_write_file_creates_missing_parent_directories(tmp_path):
     operator = LocalFileOperator()
-    missing_parent_file = tmp_path / "workspace" / "resume.txt"
+    nested_file_path = tmp_path / "workspace" / "resume.txt"
 
-    await operator.write_file(missing_parent_file, "hello")
+    await operator.write_file(nested_file_path, "hello")
 
-    assert missing_parent_file.exists()
-    assert missing_parent_file.read_text(encoding="utf-8") == "hello"
+    assert nested_file_path.exists()
+    assert nested_file_path.read_text(encoding="utf-8") == "hello"
 
 
 @pytest.mark.asyncio

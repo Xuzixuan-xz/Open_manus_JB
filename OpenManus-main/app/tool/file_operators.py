@@ -63,7 +63,7 @@ class LocalFileOperator(FileOperator):
             path_obj.parent.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             raise ToolError(
-                f"Failed to create parent directories for {path}: {str(e)}"
+                f"Failed to create parent directory {path_obj.parent} for {path}: {str(e)}"
             ) from None
         try:
             path_obj.write_text(content, encoding=self.encoding)
