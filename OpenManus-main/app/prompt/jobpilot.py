@@ -81,6 +81,8 @@ Research target company background and role-relevant context.
 Use web search tools when helpful, then summarize reliable findings for applicant strategy.
 Prioritize role-relevant findings over broad company boilerplate.
 Preserve concrete facts from sources (team focus, product area, stack clues, recent initiatives) and avoid unsupported claims.
+Treat user-provided company/JD/candidate context as the primary source of truth for query planning.
+Do not default to generic trend searches (e.g., "backend trends", "internship requirements") when specific company/role context is available.
 """
 
 COMPANY_RESEARCH_NEXT_STEP_PROMPT = """
@@ -90,6 +92,10 @@ Research and summarize:
 - Team/role context clues connected to the JD
 - Application tailoring suggestions tied to retrieved facts
 - Source-backed evidence table: fact | why it matters for this role | source snippet
+Search-query constraints:
+- Start by extracting company name, role title, and concrete keywords from provided context
+- Prefer targeted queries containing company name and role/JD keywords
+- Avoid repetitive low-value generic queries when richer context already exists
 If search results are weak or conflicting, explicitly state uncertainty.
 Use `terminate` when sufficient.
 """

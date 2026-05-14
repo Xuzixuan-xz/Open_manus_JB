@@ -89,6 +89,8 @@ def test_jobpilot_prompts_enforce_grounding():
 
     assert "Reject generic boilerplate plans" in prompts.COORDINATOR_SYSTEM_PROMPT
     assert "Prioritize role-relevant findings" in prompts.COMPANY_RESEARCH_SYSTEM_PROMPT
+    assert "Do not default to generic trend searches" in prompts.COMPANY_RESEARCH_SYSTEM_PROMPT
+    assert "Search-query constraints:" in prompts.COMPANY_RESEARCH_NEXT_STEP_PROMPT
     assert (
         'avoid hypothetical phrasing like "if your resume includes..."'
         in prompts.RESUME_OPTIMIZATION_SYSTEM_PROMPT
@@ -143,8 +145,11 @@ async def test_jobpilot_flow_passes_grounding_context():
     )
     assert "Coordinator brief:\ncoordinator-plan" in jd.calls[0]
     assert "JD analysis:\njd-analysis" in company.calls[0]
+    assert "Use user-provided role/company/candidate details as primary query-planning truth." in company.calls[0]
+    assert "Avoid repetitive generic trend/job-board searches" in company.calls[0]
     assert "Company research:\ncompany-research" in resume.calls[0]
     assert "User request:\nTarget role request" in resume.calls[0]
+    assert "Avoid hypothetical phrasing like \"if the candidate has...\"" in resume.calls[0]
     assert "Company research:\ncompany-research" in interview.calls[0]
     assert "Resume optimization:\nresume-optimization" in interview.calls[0]
     assert "[Grounding Context]\nUser request:\nTarget role request" in review.calls[0]

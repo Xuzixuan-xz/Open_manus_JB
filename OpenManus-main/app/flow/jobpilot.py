@@ -47,6 +47,9 @@ Coordinator brief:
 JD analysis:
 {jd_output}
 
+Use user-provided role/company/candidate details as primary query-planning truth.
+Extract target company and role keywords from the grounding context before searching.
+Avoid repetitive generic trend/job-board searches when richer context is already provided.
 Prioritize role-relevant findings and preserve concrete evidence from retrieved results.
 """
         )
@@ -66,7 +69,8 @@ JD analysis:
 Company research:
 {company_output}
 
-Use provided candidate background directly; avoid hypothetical "if your resume..." guidance when details exist.
+Use provided candidate background directly as source-of-truth evidence.
+Avoid hypothetical phrasing like "if the candidate has..." or "if the candidate lacks..." when details already exist.
 """
         )
 
