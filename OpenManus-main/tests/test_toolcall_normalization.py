@@ -129,3 +129,15 @@ async def test_valid_browser_use_call_still_works():
 
     assert "cmd `browser_use`" in result
     assert "browser:go_to_url:None" in result
+
+
+@pytest.mark.asyncio
+async def test_normalizes_browser_use_url_without_action():
+    """browser_use called with only a url arg (no action) should normalize to go_to_url."""
+    agent = _build_agent(include_web_search=False)
+    result = await agent.execute_tool(
+        _tool_call("browser_use", {"url": "https://example.com"})
+    )
+
+    assert "cmd `browser_use`" in result
+    assert "browser:go_to_url:None" in result

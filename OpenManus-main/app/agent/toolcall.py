@@ -250,6 +250,13 @@ class ToolCallAgent(ReActAgent):
             )
             return name, normalized_args
 
+        if "url" in args and "action" not in args:
+            normalized_args = {"action": "go_to_url", **args}
+            logger.warning(
+                "Normalized browser_use call with url but no action into go_to_url action"
+            )
+            return name, normalized_args
+
         return name, args
 
     async def _handle_special_tool(self, name: str, result: Any, **kwargs):
