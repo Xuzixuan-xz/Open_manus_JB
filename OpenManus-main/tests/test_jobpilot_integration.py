@@ -100,6 +100,58 @@ def test_jobpilot_prompts_enforce_grounding():
     assert "Preserve high-value specifics" in prompts.REPORT_SYSTEM_PROMPT
 
 
+def test_jd_analysis_prompts_handle_no_jd_case():
+    prompts = importlib.import_module("app.prompt.jobpilot")
+
+    assert (
+        "no job description is provided" in prompts.JD_ANALYSIS_SYSTEM_PROMPT
+        or "no JD is available" in prompts.JD_ANALYSIS_SYSTEM_PROMPT
+    )
+    assert "do not fabricate requirements" in prompts.JD_ANALYSIS_SYSTEM_PROMPT
+    assert "no JD was provided" in prompts.JD_ANALYSIS_NEXT_STEP_PROMPT
+
+
+def test_company_research_prompts_handle_no_company_case():
+    prompts = importlib.import_module("app.prompt.jobpilot")
+
+    assert (
+        "no company name is identifiable" in prompts.COMPANY_RESEARCH_SYSTEM_PROMPT
+    )
+    assert "no company was specified" in prompts.COMPANY_RESEARCH_SYSTEM_PROMPT
+    assert "no company was provided" in prompts.COMPANY_RESEARCH_NEXT_STEP_PROMPT
+    assert (
+        "skip company-specific web searches" in prompts.COMPANY_RESEARCH_NEXT_STEP_PROMPT
+    )
+
+
+def test_all_agent_next_step_prompts_use_terminate_status():
+    prompts = importlib.import_module("app.prompt.jobpilot")
+
+    prompts_to_check = [
+        ("COORDINATOR_NEXT_STEP_PROMPT", prompts.COORDINATOR_NEXT_STEP_PROMPT),
+        ("JD_ANALYSIS_NEXT_STEP_PROMPT", prompts.JD_ANALYSIS_NEXT_STEP_PROMPT),
+        (
+            "RESUME_OPTIMIZATION_NEXT_STEP_PROMPT",
+            prompts.RESUME_OPTIMIZATION_NEXT_STEP_PROMPT,
+        ),
+        ("INTERVIEW_NEXT_STEP_PROMPT", prompts.INTERVIEW_NEXT_STEP_PROMPT),
+        (
+            "COMPANY_RESEARCH_NEXT_STEP_PROMPT",
+            prompts.COMPANY_RESEARCH_NEXT_STEP_PROMPT,
+        ),
+        ("REVIEW_NEXT_STEP_PROMPT", prompts.REVIEW_NEXT_STEP_PROMPT),
+        ("REPORT_NEXT_STEP_PROMPT", prompts.REPORT_NEXT_STEP_PROMPT),
+    ]
+
+    for name, prompt in prompts_to_check:
+        assert (
+            'status="success"' in prompt or "status='success'" in prompt
+        ), f"{name} should specify terminate with status='success'"
+        assert (
+            'status="failure"' in prompt or "status='failure'" in prompt
+        ), f"{name} should specify terminate with status='failure'"
+
+
 @pytest.mark.asyncio
 async def test_jobpilot_flow_passes_grounding_context():
     flow_module = importlib.import_module("app.flow.jobpilot")
