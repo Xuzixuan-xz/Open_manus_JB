@@ -91,13 +91,13 @@ class LocalFileOperator(FileOperator):
                 process.communicate(), timeout=timeout
             )
             try:
-                stdout_text = stdout.decode()
+                stdout_text = stdout.decode(encoding="utf-8")
             except UnicodeDecodeError:
                 raise ToolError(
                     f"Command stdout could not be decoded as UTF-8: {cmd}"
                 ) from None
             try:
-                stderr_text = stderr.decode()
+                stderr_text = stderr.decode(encoding="utf-8")
             except UnicodeDecodeError:
                 raise ToolError(
                     f"Command stderr could not be decoded as UTF-8: {cmd}"

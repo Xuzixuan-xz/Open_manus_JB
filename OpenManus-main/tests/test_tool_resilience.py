@@ -9,10 +9,10 @@ from pydantic import Field
 def _write_test_config() -> tuple[Path, bool]:
     project_root = Path(__file__).resolve().parents[1]
     config_dir = project_root / "config"
-    config_dir.mkdir(parents=True, exist_ok=True)
     config_file = config_dir / "config.toml"
     if config_file.exists():
         return config_file, False
+    config_dir.mkdir(parents=True, exist_ok=True)
 
     config_file.write_text(
         """
