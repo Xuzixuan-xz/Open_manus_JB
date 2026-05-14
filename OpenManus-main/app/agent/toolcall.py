@@ -13,6 +13,7 @@ from app.tool import CreateChatCompletion, Terminate, ToolCollection
 
 
 TOOL_CALL_REQUIRED = "Tool calls required but none provided"
+REPEATED_FAILURE_HINT_THRESHOLD = 2
 
 
 class ToolCallAgent(ReActAgent):
@@ -184,7 +185,7 @@ class ToolCallAgent(ReActAgent):
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = await self.available_tools.execute(name=name, tool_input=args)
-            tool_call_key = f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=False)}"
+            tool_call_key = f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=True)}"
 
             if getattr(result, "error", None):
                 self._tool_failure_counts[tool_call_key] = (
@@ -207,7 +208,10 @@ class ToolCallAgent(ReActAgent):
                 if result
                 else f"Cmd `{name}` completed with no output"
             )
-            if self._tool_failure_counts.get(tool_call_key, 0) >= 2:
+            if (
+                self._tool_failure_counts.get(tool_call_key, 0)
+                >= REPEATED_FAILURE_HINT_THRESHOLD
+            ):
                 observation += (
                     "\nHint: This exact tool call has failed multiple times. "
                     "Do not retry it unchanged—inspect available paths or create missing files before retrying."

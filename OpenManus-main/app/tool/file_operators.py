@@ -58,9 +58,14 @@ class LocalFileOperator(FileOperator):
 
     async def write_file(self, path: PathLike, content: str) -> None:
         """Write content to a local file."""
+        path_obj = Path(path)
         try:
-            path_obj = Path(path)
             path_obj.parent.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            raise ToolError(
+                f"Failed to create parent directories for {path}: {str(e)}"
+            ) from None
+        try:
             path_obj.write_text(content, encoding=self.encoding)
         except Exception as e:
             raise ToolError(f"Failed to write to {path}: {str(e)}") from None
