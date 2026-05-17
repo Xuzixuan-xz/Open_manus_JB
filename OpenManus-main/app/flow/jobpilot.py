@@ -181,8 +181,6 @@ Include confirmed facts, unknowns, and role-specific priorities.
 
 Coordinator brief:
 {coordinator_plan}
-
-Treat [Explicit JD Facts] as provided JD input when present. Do not say the JD is missing if those facts or the coordinator brief contain concrete requirements.
 """
         )
 
