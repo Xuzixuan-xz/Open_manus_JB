@@ -161,3 +161,4 @@ async def test_content_only_toolcall_agent_response_finishes_without_looping():
     result = await agent.run("Summarize the request")
 
     assert result == "Step 1: grounded answer"
+    assert agent.current_step == 1
