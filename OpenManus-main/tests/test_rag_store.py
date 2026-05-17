@@ -243,7 +243,7 @@ class TestBuiltinSeeds:
         templates = _BUILTIN_SEEDS[CATEGORY_COVER_LETTER]
         text = " ".join(templates).lower()
         assert "hook" in text or "opening" in text
-        assert "closing" in text or "closing" in text
+        assert "closing" in text
 
 
 # ---------------------------------------------------------------------------
