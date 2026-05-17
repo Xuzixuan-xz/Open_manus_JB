@@ -232,3 +232,62 @@ JD:
     assert "[Explicit Candidate Background]" in grounding_context
     assert "- 两段后端实习" in grounding_context
     assert "- 做过推荐系统项目" in grounding_context
+
+
+@pytest.mark.asyncio
+async def test_guardrails_inject_when_coordinator_omits_user_facts():
+    flow_module = importlib.import_module("app.flow.jobpilot")
+
+    class StubAgent:
+        def __init__(self, response: str):
+            self.response = response
+            self.calls: list[str] = []
+
+        async def run(self, request: str) -> str:
+            self.calls.append(request)
+            return self.response
+
+    coordinator = StubAgent("Known facts: none provided.")
+    jd = StubAgent("jd-analysis")
+    company = StubAgent("company-research")
+    resume = StubAgent("resume-optimization")
+    interview = StubAgent("interview-prep")
+    review = StubAgent("review-findings")
+    report = StubAgent("final-report")
+
+    flow = flow_module.JobPilotFlow.model_construct(
+        agents={
+            "coordinator": coordinator,
+            "jd_analysis": jd,
+            "company_research": company,
+            "resume_optimization": resume,
+            "interview": interview,
+            "review": review,
+            "report": report,
+        },
+        primary_agent_key="coordinator",
+    )
+
+    await flow.execute(
+        """
+目标：帮我准备后端实习申请
+JD:
+- Python
+- Go
+- MySQL
+- Redis
+背景:
+- FastAPI 项目
+- MySQL/Redis 课程项目
+- 后端实习
+""".strip()
+    )
+
+    assert "Coordinator brief:" in jd.calls[0]
+    assert "Known facts: none provided." in jd.calls[0]
+    assert "[Coordinator Fact Guardrails]" in jd.calls[0]
+    assert "[Explicit JD Facts]\n- Python\n- Go\n- MySQL\n- Redis" in jd.calls[0]
+    assert (
+        "[Explicit Candidate Background]\n- FastAPI 项目\n- MySQL/Redis 课程项目\n- 后端实习"
+        in jd.calls[0]
+    )

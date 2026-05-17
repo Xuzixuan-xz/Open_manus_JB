@@ -162,3 +162,36 @@ async def test_content_only_toolcall_agent_response_finishes_without_looping():
 
     assert result == "Step 1: grounded answer"
     assert agent.current_step == 1
+
+
+@pytest.mark.asyncio
+async def test_loop_guard_activates_after_repeated_identical_coordinator_output():
+    toolcall_module = importlib.import_module("app.agent.toolcall")
+    schema_module = importlib.import_module("app.schema")
+
+    class FakeLLM:
+        async def ask_tool(self, **kwargs):
+            return SimpleNamespace(
+                content="",
+                tool_calls=[
+                    ToolCall(
+                        id="call_1",
+                        function=Function(
+                            name="create_chat_completion",
+                            arguments=json.dumps({"response": "same coordinator brief"}),
+                        ),
+                    )
+                ],
+            )
+
+    agent = toolcall_module.ToolCallAgent.model_construct(
+        llm=FakeLLM(),
+        memory=schema_module.Memory(),
+        max_steps=8,
+    )
+
+    result = await agent.run("Prepare a coordinator brief")
+
+    assert "same coordinator brief" in result
+    assert "Loop guard activated" in result
+    assert agent.current_step == 3
