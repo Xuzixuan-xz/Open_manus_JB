@@ -12,6 +12,14 @@ from app.flow.base import BaseFlow
 from app.logger import logger
 
 
+# Unicode ranges used for CJK language detection
+_CJK_UNIFIED_START = "\u4e00"
+_CJK_UNIFIED_END = "\u9fff"
+_CJK_EXTENSION_A_START = "\u3400"
+_CJK_EXTENSION_A_END = "\u4dbf"
+_CJK_RATIO_THRESHOLD = 0.05  # minimum fraction of CJK chars to classify text as Chinese
+
+
 class JobPilotFlow(BaseFlow):
     """Sequential multi-agent flow for job application assistance.
 
@@ -209,9 +217,12 @@ class JobPilotFlow(BaseFlow):
         if not text:
             return "en"
         cjk_count = sum(
-            1 for ch in text if "\u4e00" <= ch <= "\u9fff" or "\u3400" <= ch <= "\u4dbf"
+            1
+            for ch in text
+            if _CJK_UNIFIED_START <= ch <= _CJK_UNIFIED_END
+            or _CJK_EXTENSION_A_START <= ch <= _CJK_EXTENSION_A_END
         )
-        return "zh" if cjk_count / max(len(text), 1) > 0.05 else "en"
+        return "zh" if cjk_count / max(len(text), 1) > _CJK_RATIO_THRESHOLD else "en"
 
     @staticmethod
     def _lang_instruction(ctx: Dict[str, str]) -> str:
@@ -342,7 +353,7 @@ class JobPilotFlow(BaseFlow):
             f"=== RESUME OPTIMIZATION REPORT ===\n{ctx.get('resume_report', 'N/A')}\n"
             f"=== INTERVIEW KIT ===\n{ctx.get('interview_kit', 'N/A')}\n"
             f"=== APPLICATION DOCUMENTS ===\n{ctx.get('application_docs', 'N/A')}\n"
-            f"{JobPilotFlow._lang_instruction(ctx)}"
+            f"\n{JobPilotFlow._lang_instruction(ctx)}"
         )
 
     # ------------------------------------------------------------------
