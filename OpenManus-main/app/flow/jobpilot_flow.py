@@ -30,7 +30,20 @@ _TERMINATE_LINE_RE = re.compile(
 
 
 def _strip_terminate_lines(text: str) -> str:
-    """Remove stray 'terminate with status …' lines from *text*."""
+    """Remove stray 'terminate with status …' lines from *text*.
+
+    The LLM occasionally writes the terminate directive as plain text in its
+    response content instead of (or in addition to) issuing a proper tool call.
+    Such lines must never appear in the user-visible report.
+
+    Args:
+        text: Raw content string that may contain bare terminate directives.
+
+    Returns:
+        The cleaned text with all matching lines removed and leading/trailing
+        whitespace stripped.  Returns an empty string if *text* is empty or
+        consists solely of terminate directive lines.
+    """
     cleaned = "\n".join(
         line for line in text.splitlines() if not _TERMINATE_LINE_RE.match(line)
     )

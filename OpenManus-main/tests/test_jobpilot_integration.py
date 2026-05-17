@@ -107,7 +107,7 @@ from app.agent.jobpilot import (  # noqa: E402
     ResumeOptimizerAgent,
     ReviewAgent,
 )
-from app.flow.jobpilot_flow import JobPilotFlow  # noqa: E402
+from app.flow.jobpilot_flow import JobPilotFlow, _strip_terminate_lines  # noqa: E402
 from app.tool.jobpilot.doc_parser import DocParserTool  # noqa: E402
 from app.tool.jobpilot.md_exporter import MarkdownExporterTool  # noqa: E402
 from app.tool.jobpilot.web_scraper import WebScraperTool  # noqa: E402
@@ -276,6 +276,53 @@ class TestFlowPromptBuilders:
         assert "## 5. Final Review" in report
         assert "TechCorp" in report
         assert "OpenManus" in report
+
+
+# ===========================================================================
+# 2a. _strip_terminate_lines unit tests
+# ===========================================================================
+
+class TestStripTerminateLines:
+    """Unit tests for the _strip_terminate_lines helper."""
+
+    def test_removes_double_quoted_success(self):
+        assert _strip_terminate_lines('terminate with status "success"') == ""
+
+    def test_removes_double_quoted_failure(self):
+        assert _strip_terminate_lines('terminate with status "failure"') == ""
+
+    def test_removes_single_quoted(self):
+        assert _strip_terminate_lines("terminate with status 'success'") == ""
+
+    def test_removes_unquoted(self):
+        assert _strip_terminate_lines("terminate with status success") == ""
+
+    def test_case_insensitive(self):
+        assert _strip_terminate_lines("TERMINATE WITH STATUS SUCCESS") == ""
+        assert _strip_terminate_lines("Terminate With Status Failure") == ""
+
+    def test_leading_trailing_whitespace(self):
+        assert _strip_terminate_lines('  terminate with status "success"  ') == ""
+
+    def test_removes_from_middle_of_content(self):
+        text = 'Real content\nterminate with status "success"\nMore content'
+        assert _strip_terminate_lines(text) == "Real content\nMore content"
+
+    def test_removes_from_end_of_content(self):
+        text = 'Real content\nterminate with status "success"'
+        assert _strip_terminate_lines(text) == "Real content"
+
+    def test_preserves_unrelated_content(self):
+        text = "This is a regular line\nAnother line"
+        assert _strip_terminate_lines(text) == text
+
+    def test_empty_string(self):
+        assert _strip_terminate_lines("") == ""
+
+    def test_does_not_remove_partial_match(self):
+        # A sentence that mentions "terminate" but is not a bare directive
+        text = "This mentions terminate but not as a directive"
+        assert _strip_terminate_lines(text) == text
 
 
 # ===========================================================================
