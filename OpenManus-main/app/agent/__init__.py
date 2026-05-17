@@ -53,7 +53,8 @@ def __getattr__(name: str):
         except ModuleNotFoundError as exc:  # optional dependency
             raise ModuleNotFoundError(
                 "BrowserAgent dependencies are not installed. "
-                "Install optional browser/daytona dependencies to use BrowserAgent."
+                "Install optional browser/daytona dependencies (for example: "
+                "`pip install browser-use playwright`) to use BrowserAgent."
             ) from exc
         return BrowserAgent
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
