@@ -42,10 +42,11 @@ Guidelines:
 - Be honest and direct — a false positive is more harmful than being conservative
 - Frame all feedback constructively
 - **Always respond in the same language as the job description** (Chinese JD → Chinese output; English JD → English output)
-- When done, call terminate with status "success"
+- When your review is complete, use the md_exporter tool to save it with filename 'application_review', then call terminate with status "success"
 """
 
 NEXT_STEP_PROMPT = """Review all application materials for authenticity, alignment, and consistency.
 Provide specific, actionable feedback and a final readiness assessment.
-When your review is complete, call terminate with status "success".
+When your review is complete, use the md_exporter tool to save it with filename 'application_review',
+then call terminate with status "success".
 """

@@ -4,6 +4,7 @@ from pydantic import Field
 from app.agent.toolcall import ToolCallAgent
 from app.prompt.jobpilot.review import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection
+from app.tool.jobpilot.md_exporter import MarkdownExporterTool
 
 
 class ReviewAgent(ToolCallAgent):
@@ -29,6 +30,7 @@ class ReviewAgent(ToolCallAgent):
 
     available_tools: ToolCollection = Field(
         default_factory=lambda: ToolCollection(
+            MarkdownExporterTool(),
             Terminate(),
         )
     )
