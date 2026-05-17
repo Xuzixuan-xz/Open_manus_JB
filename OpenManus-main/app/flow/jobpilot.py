@@ -51,6 +51,11 @@ def _clean_fact_item(value: str) -> str:
     return _LIST_ITEM_RE.sub("", value).strip(" \t-–—•")
 
 
+def _normalize_fact_text(value: str) -> str:
+    """Normalize text for case-insensitive, whitespace-tolerant fact matching."""
+    return " ".join(value.split()).casefold()
+
+
 def _split_inline_items(value: str) -> list[str]:
     if not value:
         return []
@@ -118,17 +123,21 @@ def _extract_structured_user_facts(input_text: str) -> dict[str, list[str]]:
     return facts
 
 
-def _format_fact_block(title: str, items: list[str], empty_text: str) -> str:
+def _format_fact_block(
+    title: str, items: list[str], empty_text: str | None = None
+) -> str:
     lines = [title]
     if items:
         lines.extend(f"- {item}" for item in items)
-    else:
+    elif empty_text is not None:
         lines.append(f"- {empty_text}")
     return "\n".join(lines)
 
 
-def _build_grounding_context(input_text: str) -> str:
-    facts = _extract_structured_user_facts(input_text)
+def _build_grounding_context(
+    input_text: str, facts: dict[str, list[str]] | None = None
+) -> str:
+    facts = facts or _extract_structured_user_facts(input_text)
     return "\n".join(
         [
             "[Grounding Context]",
@@ -153,11 +162,47 @@ def _build_grounding_context(input_text: str) -> str:
     )
 
 
+def _inject_coordinator_fact_guardrails(
+    coordinator_plan: str, facts: dict[str, list[str]]
+) -> str:
+    """Append explicit user facts when coordinator output omits them."""
+    explicit_jd = facts.get("jd", [])
+    explicit_background = facts.get("background", [])
+    if not explicit_jd and not explicit_background:
+        return coordinator_plan
+
+    normalized_plan = _normalize_fact_text(coordinator_plan)
+    missing_facts = [
+        fact
+        for fact in (*explicit_jd, *explicit_background)
+        if _normalize_fact_text(fact) not in normalized_plan
+    ]
+    if not missing_facts:
+        return coordinator_plan
+
+    guardrail_sections = [
+        coordinator_plan.strip(),
+        "",
+        "[Coordinator Fact Guardrails]",
+        "The following explicit user-provided facts are confirmed and must be preserved downstream.",
+    ]
+    if explicit_jd:
+        guardrail_sections.append(_format_fact_block("[Explicit JD Facts]", explicit_jd))
+    if explicit_background:
+        if explicit_jd:
+            guardrail_sections.append("")
+        guardrail_sections.append(
+            _format_fact_block("[Explicit Candidate Background]", explicit_background)
+        )
+    return "\n".join(guardrail_sections)
+
+
 class JobPilotFlow(BaseFlow):
     """Deterministic multi-agent workflow for job/internship applications."""
 
     async def execute(self, input_text: str) -> str:
-        grounding_context = _build_grounding_context(input_text)
+        facts = _extract_structured_user_facts(input_text)
+        grounding_context = _build_grounding_context(input_text, facts=facts)
         coordinator = self._require_agent("coordinator")
         jd_agent = self._require_agent("jd_analysis")
         company_agent = self._require_agent("company_research")
@@ -174,6 +219,7 @@ Create a concise, grounded job-application execution brief for downstream specia
 Include confirmed facts, unknowns, and role-specific priorities.
 """
         )
+        coordinator_plan = _inject_coordinator_fact_guardrails(coordinator_plan, facts)
 
         jd_output = await jd_agent.run(
             f"""

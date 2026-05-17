@@ -32,6 +32,9 @@ class ToolCallAgent(ReActAgent):
 
     tool_calls: List[ToolCall] = Field(default_factory=list)
     _current_base64_image: Optional[str] = None
+    last_create_chat_completion_observation: Optional[str] = None
+    repeated_create_chat_completion_calls: int = 0
+    max_consecutive_identical_observations: int = 2
 
     max_steps: int = 30
     max_observe: Optional[Union[int, bool]] = None
@@ -163,7 +166,49 @@ class ToolCallAgent(ReActAgent):
             self.memory.add_message(tool_msg)
             results.append(result)
 
+        loop_guard_notice = self._prevent_repeated_create_chat_completion_loops(
+            commands=self.tool_calls, results=results
+        )
+        if loop_guard_notice:
+            results.append(loop_guard_notice)
+
         return "\n\n".join(results)
+
+    def _prevent_repeated_create_chat_completion_loops(
+        self, commands: List[ToolCall], results: List[str]
+    ) -> Optional[str]:
+        """Stop no-progress loops on identical consecutive create_chat_completion outputs."""
+        if (
+            len(commands) != 1
+            or commands[0].function.name != "create_chat_completion"
+            or not results
+        ):
+            self.last_create_chat_completion_observation = None
+            self.repeated_create_chat_completion_calls = 0
+            return None
+
+        current_observation = " ".join(results[0].split())
+        if current_observation == self.last_create_chat_completion_observation:
+            self.repeated_create_chat_completion_calls += 1
+        else:
+            self.last_create_chat_completion_observation = current_observation
+            self.repeated_create_chat_completion_calls = 0
+            return None
+
+        if (
+            self.repeated_create_chat_completion_calls
+            >= self.max_consecutive_identical_observations
+        ):
+            self.state = AgentState.FINISHED
+            logger.warning(
+                "Loop guard activated: repeated identical create_chat_completion output detected."
+            )
+            return (
+                "Loop guard activated: repeated identical create_chat_completion output "
+                "detected; finishing to prevent no-progress cycles."
+            )
+
+        return None
 
     async def execute_tool(self, command: ToolCall) -> str:
         """Execute a single tool call with robust error handling"""
