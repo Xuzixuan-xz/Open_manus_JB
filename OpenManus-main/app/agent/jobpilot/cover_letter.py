@@ -5,6 +5,7 @@ from app.agent.toolcall import ToolCallAgent
 from app.prompt.jobpilot.cover_letter import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection
 from app.tool.jobpilot.md_exporter import MarkdownExporterTool
+from app.tool.jobpilot.rag_retriever import RAGRetrieverTool
 
 
 class CoverLetterAgent(ToolCallAgent):
@@ -30,6 +31,7 @@ class CoverLetterAgent(ToolCallAgent):
 
     available_tools: ToolCollection = Field(
         default_factory=lambda: ToolCollection(
+            RAGRetrieverTool(),
             MarkdownExporterTool(),
             Terminate(),
         )

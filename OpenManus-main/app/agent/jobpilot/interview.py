@@ -4,6 +4,7 @@ from pydantic import Field
 from app.agent.toolcall import ToolCallAgent
 from app.prompt.jobpilot.interview import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection, WebSearch
+from app.tool.jobpilot.rag_retriever import RAGRetrieverTool
 
 
 class InterviewAgent(ToolCallAgent):
@@ -29,6 +30,7 @@ class InterviewAgent(ToolCallAgent):
 
     available_tools: ToolCollection = Field(
         default_factory=lambda: ToolCollection(
+            RAGRetrieverTool(),
             WebSearch(),
             Terminate(),
         )

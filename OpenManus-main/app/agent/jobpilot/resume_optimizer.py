@@ -6,6 +6,7 @@ from app.prompt.jobpilot.resume_optimizer import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection
 from app.tool.jobpilot.doc_parser import DocParserTool
 from app.tool.jobpilot.md_exporter import MarkdownExporterTool
+from app.tool.jobpilot.rag_retriever import RAGRetrieverTool
 
 
 class ResumeOptimizerAgent(ToolCallAgent):
@@ -31,6 +32,7 @@ class ResumeOptimizerAgent(ToolCallAgent):
     available_tools: ToolCollection = Field(
         default_factory=lambda: ToolCollection(
             DocParserTool(),
+            RAGRetrieverTool(),
             MarkdownExporterTool(),
             Terminate(),
         )

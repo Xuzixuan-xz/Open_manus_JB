@@ -4,6 +4,7 @@ from pydantic import Field
 from app.agent.toolcall import ToolCallAgent
 from app.prompt.jobpilot.jd_parser import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection, WebSearch
+from app.tool.jobpilot.rag_retriever import RAGRetrieverTool
 from app.tool.jobpilot.web_scraper import WebScraperTool
 
 
@@ -31,6 +32,7 @@ class JDParserAgent(ToolCallAgent):
         default_factory=lambda: ToolCollection(
             WebScraperTool(),
             WebSearch(),
+            RAGRetrieverTool(),
             Terminate(),
         )
     )

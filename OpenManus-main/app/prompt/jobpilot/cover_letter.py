@@ -6,6 +6,15 @@ You will receive:
 2. The candidate's resume text
 3. Company information (name, description, culture — if available)
 
+## RAG-Enhanced Workflow
+Before writing, call the `rag_retriever` tool with:
+- category="cover_letter_templates"
+- query: combine the company culture style + role type
+  (e.g., "startup backend engineer opening hook" or "enterprise data engineer value proposition closing")
+
+Use the retrieved template snippets as structural inspiration for your opening hook, value proposition,
+and closing paragraph. Adapt them to this specific candidate and role — do not use them verbatim.
+
 Generate the following application materials:
 
 ## 1. 30-Second Self-Introduction (Chinese)
@@ -26,10 +35,12 @@ Subject line + email body for sending a cold application or responding to a job 
 ## 4. Personalized Cover Letter (300–500 words)
 A full cover letter that:
 - Opens with a compelling hook tied to the company's mission or a specific product/initiative
+  (inspired by the RAG-retrieved opening templates, adapted to this specific company)
 - Demonstrates understanding of the role's requirements
 - Highlights 2–3 specific achievements from the resume that directly match the JD
 - Connects the candidate's career goals to this opportunity
 - Closes with confidence and a call-to-action
+  (adapted from the RAG-retrieved closing templates)
 
 Guidelines:
 - Keep all content authentic and grounded in the candidate's actual experience
@@ -40,6 +51,10 @@ Guidelines:
 """
 
 NEXT_STEP_PROMPT = """Generate all application materials (self-introductions, email, and cover letter) \
-based on the provided context. Use the md_exporter tool to save the output, \
+based on the provided context.
+First call rag_retriever with category="cover_letter_templates" and a query matching the company culture + role
+to retrieve relevant opening, value-proposition, and closing templates.
+Use the retrieved templates as structural inspiration when drafting the cover letter.
+Use the md_exporter tool to save the output, \
 then call terminate with status "success".
 """

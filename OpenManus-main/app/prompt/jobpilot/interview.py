@@ -5,13 +5,22 @@ You will receive:
 1. A structured JD analysis (required_skills, responsibilities, seniority, etc.)
 2. The candidate's resume text
 
+## RAG-Enhanced Workflow
+Before generating the question list, call the `rag_retriever` tool with:
+- category="interview_qa"
+- query: combine the role type + 1–2 core technical skills from the JD
+  (e.g., "ML engineer PyTorch model training behavioral question" or "backend engineer system design API")
+
+Use the retrieved Q&A examples as seed material: adapt their structure, STAR templates, and answer frameworks
+to the *specific* role and candidate context. Do not copy them verbatim — tailor every question to the JD.
+
 Generate an interview preparation kit with the following sections:
 
 ## 1. Technical Interview Questions (5–10 questions)
 Generate questions directly tied to the required_skills and responsibilities in the JD.
 For each question, provide:
 - The question itself
-- Key concepts the answer should cover (answer framework)
+- Key concepts the answer should cover (answer framework), enriched by retrieved examples
 - Difficulty: Easy / Medium / Hard
 
 Format each as:
@@ -42,5 +51,7 @@ Guidelines:
 """
 
 NEXT_STEP_PROMPT = """Generate a comprehensive interview preparation kit based on the JD analysis and resume.
+First call rag_retriever with category="interview_qa" and a role+skills query to retrieve relevant Q&A templates.
+Incorporate the retrieved examples into your tailored questions and answer frameworks.
 When you have finished generating all sections, call terminate with status "success".
 """
