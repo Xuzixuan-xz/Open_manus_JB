@@ -1,5 +1,6 @@
 """JobPilotFlow — deterministic multi-agent orchestrator for job application assistance."""
 import json
+import re
 import time
 from typing import Any, Dict, Optional
 
@@ -18,6 +19,35 @@ _CJK_UNIFIED_END = "\u9fff"
 _CJK_EXTENSION_A_START = "\u3400"
 _CJK_EXTENSION_A_END = "\u4dbf"
 _CJK_RATIO_THRESHOLD = 0.05  # minimum fraction of CJK chars to classify text as Chinese
+
+# Matches a bare terminate directive that the LLM sometimes writes as plain text
+# (e.g. 'terminate with status "success"') instead of using the terminate tool.
+# Such lines must never appear in the user-visible report.
+_TERMINATE_LINE_RE = re.compile(
+    r"^\s*terminate\s+with\s+status\s+[\"']?(success|failure)[\"']?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _strip_terminate_lines(text: str) -> str:
+    """Remove stray 'terminate with status …' lines from *text*.
+
+    The LLM occasionally writes the terminate directive as plain text in its
+    response content instead of (or in addition to) issuing a proper tool call.
+    Such lines must never appear in the user-visible report.
+
+    Args:
+        text: Raw content string that may contain bare terminate directives.
+
+    Returns:
+        The cleaned text with all matching lines removed and leading/trailing
+        whitespace stripped.  Returns an empty string if *text* is empty or
+        consists solely of terminate directive lines.
+    """
+    cleaned = "\n".join(
+        line for line in text.splitlines() if not _TERMINATE_LINE_RE.match(line)
+    )
+    return cleaned.strip()
 
 
 class JobPilotFlow(BaseFlow):
@@ -172,7 +202,7 @@ class JobPilotFlow(BaseFlow):
             # and `tool_calls` (e.g. terminate); we want the content part.
             content = ""
             for msg in reversed(agent.memory.messages):
-                stripped = (msg.content or "").strip()
+                stripped = _strip_terminate_lines(msg.content or "")
                 if msg.role == "assistant" and stripped:
                     content = stripped
                     break
@@ -188,7 +218,9 @@ class JobPilotFlow(BaseFlow):
                                     args = json.loads(
                                         tool_call.function.arguments or "{}"
                                     )
-                                    extracted = args.get("content", "").strip()
+                                    extracted = _strip_terminate_lines(
+                                        args.get("content", "")
+                                    )
                                     if extracted:
                                         content = extracted
                                 except (json.JSONDecodeError, ValueError):
