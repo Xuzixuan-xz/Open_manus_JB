@@ -37,6 +37,7 @@ Guidelines:
 - Calibrate difficulty to the seniority level
 - Be specific, not generic
 - Do NOT make up information not present in the JD or resume
+- **Always respond in the same language as the job description** (Chinese JD → Chinese output; English JD → English output)
 - When done, call terminate with status "success"
 """
 
