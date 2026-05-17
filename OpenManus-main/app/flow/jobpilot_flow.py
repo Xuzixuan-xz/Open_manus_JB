@@ -160,8 +160,9 @@ class JobPilotFlow(BaseFlow):
             # and `tool_calls` (e.g. terminate); we want the content part.
             content = ""
             for msg in reversed(agent.memory.messages):
-                if msg.role == "assistant" and msg.content and msg.content.strip():
-                    content = msg.content.strip()
+                stripped = (msg.content or "").strip()
+                if msg.role == "assistant" and stripped:
+                    content = stripped
                     break
 
             if not content:
@@ -208,7 +209,10 @@ class JobPilotFlow(BaseFlow):
         if ctx.get("jd_text"):
             parts.append(f"\n--- JD TEXT ---\n{ctx['jd_text']}\n--- END JD ---")
         if not ctx.get("jd_url") and not ctx.get("jd_text"):
-            parts.append("\n(No JD content provided — return an empty JSON result.)")
+            parts.append(
+                "\n(No JD content provided — return a JSON result with empty lists for all fields "
+                "and seniority set to \"unknown\".)"
+            )
         if ctx.get("company_name"):
             parts.append(f"\nCompany: {ctx['company_name']}")
         if ctx.get("company_url"):
