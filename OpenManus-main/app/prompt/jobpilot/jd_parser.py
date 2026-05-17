@@ -23,11 +23,13 @@ Example output:
   "seniority": "junior"
 }
 
-If you need to fetch a JD from a URL, use the web_scraper tool first, then analyze the content.
-When you have completed the analysis, call the terminate tool with status "success".
+If a URL is provided, use the web_scraper tool to fetch the JD first.
+If web_scraper fails or the URL is invalid, fall back to analyzing the JD text that is provided directly in the prompt — do NOT call terminate with failure just because the URL is unavailable.
+When you have completed the analysis, output the JSON and call the terminate tool with status "success".
 """
 
 NEXT_STEP_PROMPT = """Parse the job description thoroughly and output the structured JSON analysis.
-If a URL was provided, use the web_scraper tool to retrieve the JD content first.
+If a URL was provided, try the web_scraper tool first.
+If web_scraper fails, analyze the JD text included in the prompt instead — always produce a JSON result.
 Once the JSON analysis is ready, call terminate with status "success".
 """
