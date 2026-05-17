@@ -60,18 +60,18 @@ def _split_inline_items(value: str) -> list[str]:
 def _extract_structured_user_facts(input_text: str) -> dict[str, list[str]]:
     facts = {"jd": [], "background": []}
     current_section: str | None = None
-    allow_plain_continuation = False
+    accept_next_line_as_fact = False
 
     for raw_line in input_text.splitlines():
         stripped = raw_line.strip()
         if not stripped:
-            allow_plain_continuation = False
+            accept_next_line_as_fact = False
             continue
 
         section, inline_value = _match_section_label(stripped)
         if section:
             current_section = section
-            allow_plain_continuation = True
+            accept_next_line_as_fact = True
             facts[section].extend(_split_inline_items(inline_value))
             continue
 
@@ -82,14 +82,14 @@ def _extract_structured_user_facts(input_text: str) -> dict[str, list[str]]:
             cleaned = _clean_fact_item(stripped)
             if cleaned:
                 facts[current_section].append(cleaned)
-            allow_plain_continuation = False
+            accept_next_line_as_fact = False
             continue
 
-        if allow_plain_continuation:
+        if accept_next_line_as_fact:
             cleaned = _clean_fact_item(stripped)
             if cleaned:
                 facts[current_section].append(cleaned)
-            allow_plain_continuation = False
+            accept_next_line_as_fact = False
             continue
 
         current_section = None
@@ -98,7 +98,7 @@ def _extract_structured_user_facts(input_text: str) -> dict[str, list[str]]:
         deduped: list[str] = []
         seen: set[str] = set()
         for value in values:
-            key = value.casefold()
+            key = " ".join(value.split())
             if key not in seen:
                 seen.add(key)
                 deduped.append(value)
