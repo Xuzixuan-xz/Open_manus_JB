@@ -25,7 +25,8 @@ _SECTION_LABELS = {
         "项目经历",
     ),
 }
-# Matches bullet and numbered list formats such as "- item", "* item", "1. item", and "(1) item".
+# Matches bullet markers and numbered list formats such as "- item", "* item",
+# "1. item", "1)", "(1) item", and the corresponding full-width CJK variants.
 _LIST_ITEM_RE = re.compile(r"^(?:[-*•]|(?:\d+[\.\)])|(?:[（(]?\d+[）)]))\s*")
 _SECTION_LABEL_PATTERNS = {
     section: tuple(
@@ -58,6 +59,15 @@ def _split_inline_items(value: str) -> list[str]:
 
 
 def _extract_structured_user_facts(input_text: str) -> dict[str, list[str]]:
+    """Extract explicit JD/background facts from labeled user input.
+
+    Rules:
+    - A known section label starts a JD or background block.
+    - Inline content on the same label line is captured immediately.
+    - Bullet/numbered lines under the active section are captured as facts.
+    - The first plain line after a section label is accepted as a fact to support
+      single-line sections such as "JD: Java, Spring Boot".
+    """
     facts = {"jd": [], "background": []}
     current_section: str | None = None
     accept_next_line_as_fact = False
@@ -98,6 +108,7 @@ def _extract_structured_user_facts(input_text: str) -> dict[str, list[str]]:
         deduped: list[str] = []
         seen: set[str] = set()
         for value in values:
+            # Preserve the user's original formatting while ignoring whitespace-only duplicates.
             key = " ".join(value.split())
             if key not in seen:
                 seen.add(key)
