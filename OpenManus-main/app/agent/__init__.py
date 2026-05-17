@@ -1,27 +1,4 @@
 from app.agent.base import BaseAgent
-from app.agent.jobpilot import (
-    CompanyResearchAgent,
-    CoordinatorAgent,
-    InterviewAgent,
-    JDAnalysisAgent,
-    ReportAgent,
-    ResumeOptimizationAgent,
-    ReviewAgent,
-)
-from app.agent.mcp import MCPAgent
-from app.agent.react import ReActAgent
-from app.agent.swe import SWEAgent
-from app.agent.toolcall import ToolCallAgent
-
-try:
-    from app.agent.browser import BrowserAgent
-except ModuleNotFoundError:  # optional dependency (e.g., daytona/browser runtime)
-    class BrowserAgent:  # type: ignore[no-redef]
-        def __init__(self, *args, **kwargs):
-            raise ModuleNotFoundError(
-                "BrowserAgent dependencies are not installed. "
-                "Install optional browser/daytona dependencies to use BrowserAgent."
-            )
 
 
 __all__ = [
@@ -39,3 +16,45 @@ __all__ = [
     "ReviewAgent",
     "ReportAgent",
 ]
+
+
+def __getattr__(name: str):
+    if name in {
+        "CoordinatorAgent",
+        "JDAnalysisAgent",
+        "ResumeOptimizationAgent",
+        "InterviewAgent",
+        "CompanyResearchAgent",
+        "ReviewAgent",
+        "ReportAgent",
+    }:
+        from app.agent import jobpilot
+
+        return getattr(jobpilot, name)
+    if name == "MCPAgent":
+        from app.agent.mcp import MCPAgent
+
+        return MCPAgent
+    if name == "ReActAgent":
+        from app.agent.react import ReActAgent
+
+        return ReActAgent
+    if name == "SWEAgent":
+        from app.agent.swe import SWEAgent
+
+        return SWEAgent
+    if name == "ToolCallAgent":
+        from app.agent.toolcall import ToolCallAgent
+
+        return ToolCallAgent
+    if name == "BrowserAgent":
+        try:
+            from app.agent.browser import BrowserAgent
+        except ModuleNotFoundError as exc:  # optional dependency
+            raise ModuleNotFoundError(
+                "BrowserAgent dependencies are not installed. "
+                "Install optional browser/daytona dependencies (for example: "
+                "`pip install browser-use playwright`) to use BrowserAgent."
+            ) from exc
+        return BrowserAgent
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

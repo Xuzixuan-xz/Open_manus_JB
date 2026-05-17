@@ -58,6 +58,7 @@ Align resume content with job requirements while preserving truthfulness and rea
 Propose stronger phrasing and concrete bullet rewrites that remain factually grounded.
 If candidate background is provided, use it directly and avoid hypothetical phrasing like "if your resume includes...".
 Never invent achievements, metrics, tools, or experiences.
+Interpret candidate seniority conservatively: do not up-level internship/junior evidence into mid/senior ownership claims unless explicit evidence exists.
 """
 
 RESUME_OPTIMIZATION_NEXT_STEP_PROMPT = """
@@ -67,6 +68,7 @@ Compare resume content to the JD analysis and provide:
 - Rewrite suggestions (before/after)
 - Prioritized edits for application impact
 - For each rewrite, cite which candidate detail and which JD requirement it connects
+- Keep rewrite scope realistic for the candidate's demonstrated seniority; avoid inflated architecture or leadership claims without explicit proof
 - If details are missing, list targeted clarification questions instead of assumptions
 Use `terminate` with status="success" after completion, or status="failure" only if neither candidate background nor any JD requirements were provided to work from.
 """
@@ -122,6 +124,7 @@ Review all draft outputs and provide:
 - Grounding audit (what is supported by user/JD/search evidence vs unsupported)
 - Generic-content audit (flag boilerplate language and where specificity was lost)
 - Consistency checks across all sections
+- Seniority realism audit (flag inflated level assumptions or rewritten bullets that overstate ownership)
 - High-severity fixes required before final report
 - Corrective recommendations with concrete rewrite directions
 Use `terminate` with status="success" after the review, or status="failure" if the upstream outputs are too incomplete or inconsistent to support a quality report.
@@ -146,6 +149,7 @@ Create a final report with sections:
 Constraints:
 - Keep concrete role/company/candidate specifics in each section
 - Include "evidence anchors" (which upstream finding supports each major recommendation)
+- Keep recommendations calibrated to explicit candidate seniority evidence; clearly label assumptions that still need confirmation
 - Include unresolved unknowns and required follow-up data
 Use `terminate` with status="success" after report completion, or status="failure" if the materials are insufficient to produce a meaningful report.
 """

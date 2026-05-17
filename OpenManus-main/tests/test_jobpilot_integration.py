@@ -99,6 +99,13 @@ def test_jobpilot_prompts_enforce_grounding():
     )
     assert "strict QA and grounding auditor" in prompts.REVIEW_SYSTEM_PROMPT
     assert "Preserve high-value specifics" in prompts.REPORT_SYSTEM_PROMPT
+    assert "Interpret candidate seniority conservatively" in (
+        prompts.RESUME_OPTIMIZATION_SYSTEM_PROMPT
+    )
+    assert "Seniority realism audit" in prompts.REVIEW_NEXT_STEP_PROMPT
+    assert "calibrated to explicit candidate seniority evidence" in (
+        prompts.REPORT_NEXT_STEP_PROMPT
+    )
 
 
 def test_jd_analysis_prompts_handle_no_jd_case():
