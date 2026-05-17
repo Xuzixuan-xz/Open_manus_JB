@@ -1,10 +1,144 @@
+import re
+
 from app.flow.base import BaseFlow
+
+
+_SECTION_LABELS = {
+    "jd": (
+        "jd",
+        "job description",
+        "job requirements",
+        "requirements",
+        "岗位要求",
+        "岗位描述",
+        "职位描述",
+        "任职要求",
+    ),
+    "background": (
+        "background",
+        "candidate background",
+        "resume",
+        "experience",
+        "经历",
+        "背景",
+        "简历",
+        "项目经历",
+    ),
+}
+_LIST_ITEM_RE = re.compile(r"^(?:[-*•]|(?:\d+[\.\)])|(?:[（(]?\d+[）)]))\s*")
+
+
+def _match_section_label(line: str) -> tuple[str | None, str]:
+    normalized = line.strip().replace("：", ":")
+    for section, labels in _SECTION_LABELS.items():
+        for label in labels:
+            match = re.match(rf"^{re.escape(label)}\s*:?\s*(.*)$", normalized, re.IGNORECASE)
+            if match:
+                return section, match.group(1).strip()
+    return None, ""
+
+
+def _clean_fact_item(value: str) -> str:
+    return _LIST_ITEM_RE.sub("", value).strip(" \t-–—•")
+
+
+def _split_inline_items(value: str) -> list[str]:
+    if not value:
+        return []
+    segments = re.split(r"[;,；、]\s*", value)
+    return [item for item in (_clean_fact_item(segment) for segment in segments) if item]
+
+
+def _extract_structured_user_facts(input_text: str) -> dict[str, list[str]]:
+    facts = {"jd": [], "background": []}
+    current_section: str | None = None
+    allow_plain_continuation = False
+
+    for raw_line in input_text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            allow_plain_continuation = False
+            continue
+
+        section, inline_value = _match_section_label(stripped)
+        if section:
+            current_section = section
+            allow_plain_continuation = True
+            facts[section].extend(_split_inline_items(inline_value))
+            continue
+
+        if current_section is None:
+            continue
+
+        if _LIST_ITEM_RE.match(stripped):
+            cleaned = _clean_fact_item(stripped)
+            if cleaned:
+                facts[current_section].append(cleaned)
+            allow_plain_continuation = False
+            continue
+
+        if allow_plain_continuation:
+            cleaned = _clean_fact_item(stripped)
+            if cleaned:
+                facts[current_section].append(cleaned)
+            allow_plain_continuation = False
+            continue
+
+        current_section = None
+
+    for section, values in facts.items():
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            key = value.casefold()
+            if key not in seen:
+                seen.add(key)
+                deduped.append(value)
+        facts[section] = deduped
+
+    return facts
+
+
+def _format_fact_block(title: str, items: list[str], empty_text: str) -> str:
+    lines = [title]
+    if items:
+        lines.extend(f"- {item}" for item in items)
+    else:
+        lines.append(f"- {empty_text}")
+    return "\n".join(lines)
+
+
+def _build_grounding_context(input_text: str) -> str:
+    facts = _extract_structured_user_facts(input_text)
+    return "\n".join(
+        [
+            "[Grounding Context]",
+            "User request:",
+            input_text,
+            "",
+            "[Structured User Facts]",
+            _format_fact_block(
+                "[Explicit JD Facts]",
+                facts["jd"],
+                "No explicit JD-labeled facts detected.",
+            ),
+            "",
+            _format_fact_block(
+                "[Explicit Candidate Background]",
+                facts["background"],
+                "No explicit background-labeled facts detected.",
+            ),
+            "",
+            "Treat every explicit fact above as user-provided ground truth. Do not mark those facts as unknown or ask the user to repeat them.",
+        ]
+    )
 
 
 class JobPilotFlow(BaseFlow):
     """Deterministic multi-agent workflow for job/internship applications."""
 
     async def execute(self, input_text: str) -> str:
+        grounding_context = _build_grounding_context(input_text)
         coordinator = self._require_agent("coordinator")
         jd_agent = self._require_agent("jd_analysis")
         company_agent = self._require_agent("company_research")
@@ -15,9 +149,7 @@ class JobPilotFlow(BaseFlow):
 
         coordinator_plan = await coordinator.run(
             f"""
-[Grounding Context]
-User request:
-{input_text}
+{grounding_context}
 
 Create a concise, grounded job-application execution brief for downstream specialist agents.
 Include confirmed facts, unknowns, and role-specific priorities.
@@ -26,20 +158,18 @@ Include confirmed facts, unknowns, and role-specific priorities.
 
         jd_output = await jd_agent.run(
             f"""
-[Grounding Context]
-User request:
-{input_text}
+{grounding_context}
 
 Coordinator brief:
 {coordinator_plan}
+
+Treat [Explicit JD Facts] as provided JD input when present. Do not say the JD is missing if those facts or the coordinator brief contain concrete requirements.
 """
         )
 
         company_output = await company_agent.run(
             f"""
-[Grounding Context]
-User request:
-{input_text}
+{grounding_context}
 
 Coordinator brief:
 {coordinator_plan}
@@ -53,9 +183,7 @@ Prioritize role-relevant findings and preserve concrete evidence from retrieved 
 
         resume_output = await resume_agent.run(
             f"""
-[Grounding Context]
-User request:
-{input_text}
+{grounding_context}
 
 Coordinator brief:
 {coordinator_plan}
@@ -72,9 +200,7 @@ Use provided candidate background directly; avoid hypothetical "if your resume..
 
         interview_output = await interview_agent.run(
             f"""
-[Grounding Context]
-User request:
-{input_text}
+{grounding_context}
 
 Coordinator brief:
 {coordinator_plan}
@@ -94,9 +220,7 @@ Tailor questions to this role/company context and provided candidate background.
 
         review_output = await review_agent.run(
             f"""
-[Grounding Context]
-User request:
-{input_text}
+{grounding_context}
 
 Review this draft package with strict grounding QA. Flag generic statements, unsupported claims, and specificity loss.
 
@@ -121,8 +245,7 @@ Review this draft package with strict grounding QA. Flag generic statements, uns
             f"""
 Create the final structured JobPilot report from these materials. Preserve key specifics and evidence anchors.
 
-[User Request]
-{input_text}
+{grounding_context}
 
 [Coordinator Brief]
 {coordinator_plan}

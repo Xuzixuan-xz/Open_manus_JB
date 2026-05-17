@@ -88,6 +88,7 @@ def test_jobpilot_prompts_enforce_grounding():
     prompts = importlib.import_module("app.prompt.jobpilot")
 
     assert "Reject generic boilerplate plans" in prompts.COORDINATOR_SYSTEM_PROMPT
+    assert "do not ask the user to restate them" in prompts.COORDINATOR_NEXT_STEP_PROMPT
     assert "Prioritize role-relevant findings" in prompts.COMPANY_RESEARCH_SYSTEM_PROMPT
     assert (
         'avoid hypothetical phrasing like "if your resume includes..."'
@@ -109,6 +110,7 @@ def test_jd_analysis_prompts_handle_no_jd_case():
     )
     assert "do not fabricate requirements" in prompts.JD_ANALYSIS_SYSTEM_PROMPT
     assert "no JD was provided" in prompts.JD_ANALYSIS_NEXT_STEP_PROMPT
+    assert "Do not claim that no JD was provided" in prompts.JD_ANALYSIS_NEXT_STEP_PROMPT
 
 
 def test_company_research_prompts_handle_no_company_case():
@@ -193,6 +195,7 @@ async def test_jobpilot_flow_passes_grounding_context():
         "confirmed facts, unknowns, and role-specific priorities"
         in coordinator.calls[0]
     )
+    assert "[Structured User Facts]" in coordinator.calls[0]
     assert "Coordinator brief:\ncoordinator-plan" in jd.calls[0]
     assert "JD analysis:\njd-analysis" in company.calls[0]
     assert "Company research:\ncompany-research" in resume.calls[0]
@@ -202,5 +205,30 @@ async def test_jobpilot_flow_passes_grounding_context():
     assert "[Grounding Context]\nUser request:\nTarget role request" in review.calls[0]
     assert "[Coordinator Brief]\ncoordinator-plan" in review.calls[0]
     assert "[JD Analysis]\njd-analysis" in review.calls[0]
-    assert "[User Request]\nTarget role request" in report.calls[0]
+    assert "[Grounding Context]\nUser request:\nTarget role request" in report.calls[0]
     assert "[Review Findings]\nreview-findings" in report.calls[0]
+
+
+def test_jobpilot_flow_extracts_explicit_jd_and_background_facts():
+    flow_module = importlib.import_module("app.flow.jobpilot")
+
+    grounding_context = flow_module._build_grounding_context(
+        """
+目标：帮我准备后端实习申请
+JD:
+- Java
+- Spring Boot
+- MySQL
+背景:
+- 两段后端实习
+- 做过推荐系统项目
+""".strip()
+    )
+
+    assert "[Explicit JD Facts]" in grounding_context
+    assert "- Java" in grounding_context
+    assert "- Spring Boot" in grounding_context
+    assert "- MySQL" in grounding_context
+    assert "[Explicit Candidate Background]" in grounding_context
+    assert "- 两段后端实习" in grounding_context
+    assert "- 做过推荐系统项目" in grounding_context
