@@ -29,7 +29,20 @@ For each significant project or work experience in the resume, provide a STAR-fo
 Focus on aligning language with the JD's terminology and seniority level.
 
 ## 5. Summary / Objective Rewrite
-Provide a tailored professional summary (3–4 sentences) aligned with this specific role.
+Provide a comprehensive rewrite and improvement plan for the candidate's professional summary / objective statement. Include all of the following:
+
+a) **Rewritten Summary** — A polished professional summary (5–7 sentences) that:
+   - Opens with a strong identity statement (years of experience, core expertise, degree if relevant)
+   - Highlights the 2–3 most relevant technical skills aligned with the JD
+   - Mentions notable achievements or projects that demonstrate impact
+   - Explicitly addresses any skill gaps (e.g., framing eagerness to grow in a missing skill)
+   - Closes with a career goal sentence that connects to this specific role and company
+
+b) **Key Positioning Tips** — 3–5 concrete suggestions on how the candidate should position themselves given their strengths and the skill gaps identified above (e.g., "Lead with FastAPI experience since that is a core requirement; acknowledge Django as a skill you are actively building").
+
+c) **Phrases to Avoid** — List 2–3 vague or overused phrases found in the current summary (if any) and suggest sharper alternatives.
+
+d) **Career Direction Advice** — 2–3 sentences of honest advice on what skills or experiences the candidate should prioritize building to become a stronger fit for this type of role in the future.
 
 Guidelines:
 - Be specific, constructive, and honest
