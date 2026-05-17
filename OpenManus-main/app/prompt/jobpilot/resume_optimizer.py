@@ -36,10 +36,12 @@ Guidelines:
 - Do NOT fabricate achievements or skills the candidate does not have
 - Match the seniority level from the JD analysis
 - If you need to parse a resume file (PDF/Docx), use the doc_parser tool first
+- Use the md_exporter tool to save your completed analysis with filename 'resume_optimization_report'
 - When done, call terminate with status "success"
 """
 
 NEXT_STEP_PROMPT = """Analyze the resume against the JD analysis and provide structured optimization suggestions.
 Use the doc_parser tool if a resume file path is provided.
-When your analysis is complete, call terminate with status "success".
+When your analysis is complete, use the md_exporter tool to save it with filename 'resume_optimization_report', \
+then call terminate with status "success".
 """
