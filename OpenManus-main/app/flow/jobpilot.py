@@ -25,14 +25,22 @@ _SECTION_LABELS = {
         "项目经历",
     ),
 }
+# Matches bullet and numbered list formats such as "- item", "* item", "1. item", and "(1) item".
 _LIST_ITEM_RE = re.compile(r"^(?:[-*•]|(?:\d+[\.\)])|(?:[（(]?\d+[）)]))\s*")
+_SECTION_LABEL_PATTERNS = {
+    section: tuple(
+        re.compile(rf"^{re.escape(label)}\s*:?\s*(.*)$", re.IGNORECASE)
+        for label in labels
+    )
+    for section, labels in _SECTION_LABELS.items()
+}
 
 
 def _match_section_label(line: str) -> tuple[str | None, str]:
     normalized = line.strip().replace("：", ":")
-    for section, labels in _SECTION_LABELS.items():
-        for label in labels:
-            match = re.match(rf"^{re.escape(label)}\s*:?\s*(.*)$", normalized, re.IGNORECASE)
+    for section, patterns in _SECTION_LABEL_PATTERNS.items():
+        for pattern in patterns:
+            match = pattern.match(normalized)
             if match:
                 return section, match.group(1).strip()
     return None, ""
