@@ -144,12 +144,31 @@ class JobPilotFlow(BaseFlow):
     async def _run_fresh_agent(
         agent_cls: Any, prompt: str, step_name: str
     ) -> str:
-        """Instantiate a fresh agent, run it with the prompt, return its output."""
+        """Instantiate a fresh agent, run it with the prompt, return its output.
+
+        The agent's actual analysis is stored as assistant message content in its
+        memory.  ``agent.run()`` only returns tool-call traces (e.g. "Step 1:
+        Observed output of cmd …"), so we extract the last non-empty assistant
+        message instead to get the real LLM-generated content.
+        """
         agent = agent_cls()
         try:
-            result = await agent.run(prompt)
-            logger.info(f"[JobPilot/{step_name}] completed ({len(result)} chars)")
-            return result
+            await agent.run(prompt)
+
+            # Extract the last assistant message that contains real content.
+            # assistant messages may carry both `content` (the analysis text)
+            # and `tool_calls` (e.g. terminate); we want the content part.
+            content = ""
+            for msg in reversed(agent.memory.messages):
+                if msg.role == "assistant" and msg.content and msg.content.strip():
+                    content = msg.content.strip()
+                    break
+
+            if not content:
+                content = f"[{step_name}: no output produced]"
+
+            logger.info(f"[JobPilot/{step_name}] completed ({len(content)} chars)")
+            return content
         except Exception as e:
             logger.error(f"[JobPilot/{step_name}] failed: {e}")
             return f"[{step_name} failed: {e}]"
@@ -183,10 +202,13 @@ class JobPilotFlow(BaseFlow):
         parts = ["Please parse the following job description:"]
         if ctx.get("jd_url"):
             parts.append(
-                f"\nThe JD is available at this URL — use the web_scraper tool to fetch it:\n{ctx['jd_url']}"
+                f"\nThe JD may be available at this URL — try the web_scraper tool to fetch it:\n{ctx['jd_url']}"
+                "\n(If web_scraper fails, use the JD text provided below instead.)"
             )
         if ctx.get("jd_text"):
             parts.append(f"\n--- JD TEXT ---\n{ctx['jd_text']}\n--- END JD ---")
+        if not ctx.get("jd_url") and not ctx.get("jd_text"):
+            parts.append("\n(No JD content provided — return an empty JSON result.)")
         if ctx.get("company_name"):
             parts.append(f"\nCompany: {ctx['company_name']}")
         if ctx.get("company_url"):
