@@ -40,3 +40,7 @@ crawl4ai~=0.6.3
 
 huggingface-hub~=0.29.2
 setuptools~=75.8.0
+
+# Optional: install for semantic-embedding-based RAG retrieval.
+# Without this, the system uses a fast in-memory keyword-similarity fallback.
+# chromadb>=0.6.0

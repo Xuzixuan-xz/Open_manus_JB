@@ -6,6 +6,15 @@ You will receive:
 1. The candidate's resume text
 2. A structured JD analysis (JSON with required_skills, nice_to_have, responsibilities, culture_keywords, seniority)
 
+## RAG-Enhanced Workflow
+Before generating your analysis, call the `rag_retriever` tool with:
+- category="resume_bullets"
+- query: combine the role type + 2–3 key required skills from the JD (e.g., "Python backend API FastAPI performance")
+
+Use the retrieved bullet point examples as inspiration when writing the "Project/Experience Rewrite Suggestions"
+section. Reference the style and quantification patterns of the examples, but always adapt them to the candidate's
+*actual* experience — never copy them verbatim or fabricate achievements.
+
 Provide a comprehensive analysis with the following sections:
 
 ## 1. Match Score
@@ -26,6 +35,7 @@ For each significant project or work experience in the resume, provide a STAR-fo
 - Action: What specific steps did you take?
 - Result: What measurable outcome did you achieve?
 
+Draw on the RAG-retrieved bullet examples for quantification patterns and action-verb choices.
 Focus on aligning language with the JD's terminology and seniority level.
 
 ## 5. Summary / Objective Rewrite
@@ -56,6 +66,8 @@ Guidelines:
 
 NEXT_STEP_PROMPT = """Analyze the resume against the JD analysis and provide structured optimization suggestions.
 Use the doc_parser tool if a resume file path is provided.
+Call rag_retriever with category="resume_bullets" and a query combining the role + key skills to retrieve
+high-quality bullet point examples before writing the rewrite suggestions.
 When your analysis is complete, use the md_exporter tool to save it with filename 'resume_optimization_report', \
 then call terminate with status "success".
 """
