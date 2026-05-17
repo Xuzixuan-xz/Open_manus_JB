@@ -150,12 +150,16 @@ class JobPilotFlow(BaseFlow):
         memory.  ``agent.run()`` only returns tool-call traces (e.g. "Step 1:
         Observed output of cmd …"), so we extract the last non-empty assistant
         message instead to get the real LLM-generated content.
+
+        If no assistant text content is found (the agent wrote everything into
+        an ``md_exporter`` tool call instead), we fall back to extracting the
+        ``content`` argument from the most recent ``md_exporter`` invocation.
         """
         agent = agent_cls()
         try:
             await agent.run(prompt)
 
-            # Extract the last assistant message that contains real content.
+            # 1) Extract the last assistant message that contains real content.
             # assistant messages may carry both `content` (the analysis text)
             # and `tool_calls` (e.g. terminate); we want the content part.
             content = ""
@@ -164,6 +168,27 @@ class JobPilotFlow(BaseFlow):
                 if msg.role == "assistant" and stripped:
                     content = stripped
                     break
+
+            # 2) Fallback: if the agent put its output entirely inside an
+            # md_exporter tool call (no response content), extract from there.
+            if not content:
+                for msg in reversed(agent.memory.messages):
+                    if msg.role == "assistant" and msg.tool_calls:
+                        for tool_call in msg.tool_calls:
+                            if tool_call.function.name == "md_exporter":
+                                try:
+                                    args = json.loads(
+                                        tool_call.function.arguments or "{}"
+                                    )
+                                    extracted = args.get("content", "").strip()
+                                    if extracted:
+                                        content = extracted
+                                except (json.JSONDecodeError, ValueError):
+                                    pass
+                            if content:
+                                break
+                    if content:
+                        break
 
             if not content:
                 content = f"[{step_name}: no output produced]"
