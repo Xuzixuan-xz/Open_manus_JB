@@ -1,6 +1,7 @@
 import json
 import importlib
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from pydantic import Field
@@ -141,3 +142,23 @@ async def test_normalizes_browser_use_url_without_action():
 
     assert "cmd `browser_use`" in result
     assert "browser:go_to_url:None" in result
+
+
+@pytest.mark.asyncio
+async def test_content_only_toolcall_agent_response_finishes_without_looping():
+    toolcall_module = importlib.import_module("app.agent.toolcall")
+    schema_module = importlib.import_module("app.schema")
+
+    class FakeLLM:
+        async def ask_tool(self, **kwargs):
+            return SimpleNamespace(content="grounded answer", tool_calls=[])
+
+    agent = toolcall_module.ToolCallAgent.model_construct(
+        llm=FakeLLM(),
+        memory=schema_module.Memory(),
+    )
+
+    result = await agent.run("Summarize the request")
+
+    assert result == "Step 1: grounded answer"
+    assert agent.current_step == 1

@@ -134,8 +134,10 @@ class ToolCallAgent(ReActAgent):
             if self.tool_choices == ToolChoice.REQUIRED:
                 raise ValueError(TOOL_CALL_REQUIRED)
 
-            # Return last message content isssssssssssssssssssssf no tool calls
-            return self.messages[-1].content or "No content or commands to execute"
+            if self.messages and (last_content := self.messages[-1].content):
+                self.state = AgentState.FINISHED
+                return last_content
+            return "No content or commands to execute"
 
         results = []
         for command in self.tool_calls:

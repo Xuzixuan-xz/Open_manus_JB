@@ -22,7 +22,8 @@ Brief must include:
 - confirmed facts from the user input (include every JD technology and background item the user listed)
 - unknowns that must not be fabricated (only information the user did NOT provide)
 - role-specific priorities that downstream agents must preserve
-After producing the brief (in your response or via create_chat_completion), use `terminate` with status="success".
+- If [Explicit JD Facts] or [Explicit Candidate Background] is present, treat those sections as confirmed input and do not ask the user to restate them.
+- Use `create_chat_completion` to return the brief, then use `terminate` with status="success". Do not stop at plain-text assistant output without tool calls.
 Only use `terminate` with status="failure" if the user request contains no interpretable application-related content at all.
 """
 
@@ -43,8 +44,12 @@ Analyze the provided job description and return:
 - Key business/context clues
 - Candidate positioning suggestions
 - Evidence mapping: each key point should reference explicit wording from the JD/user request
-If no JD text is present in the user request (no skills, technologies, or role requirements were provided at all), return a clear note that no JD was provided and list targeted clarification questions instead.
-Use `terminate` with status="success" after completion, or status="failure" if no actionable content could be produced.
+- If [Explicit JD Facts] is non-empty, treat that section as valid JD input even if the raw JD is brief or bullet-only.
+- Do not claim that no JD was provided when [Explicit JD Facts], the user request, or the coordinator brief already contain concrete skills, technologies, or role requirements.
+- Do not repeat clarification questions for facts the user has already answered in [Explicit JD Facts] or [Explicit Candidate Background].
+- Only ask targeted clarification questions when no JD requirements of any kind were provided.
+- Use `create_chat_completion` for the analysis, then `terminate` with status="success". Do not reply with plain assistant text only.
+Use `terminate` with status="failure" only if no actionable content could be produced.
 """
 
 RESUME_OPTIMIZATION_SYSTEM_PROMPT = """
