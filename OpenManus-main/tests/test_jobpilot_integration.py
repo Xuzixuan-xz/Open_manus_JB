@@ -223,10 +223,10 @@ class TestFlowPromptBuilders:
         assert "No resume provided" in prompt
 
     def test_build_resume_prompt_with_path(self):
-        ctx = {"jd_analysis": SAMPLE_JD_ANALYSIS, "resume_path": "/tmp/resume.pdf"}
+        ctx = {"jd_analysis": SAMPLE_JD_ANALYSIS, "resume_path": "/path/to/resume.pdf"}
         prompt = JobPilotFlow._build_resume_prompt(ctx)
         assert "doc_parser" in prompt
-        assert "/tmp/resume.pdf" in prompt
+        assert "/path/to/resume.pdf" in prompt
 
     def test_build_interview_prompt(self):
         ctx = {"jd_analysis": SAMPLE_JD_ANALYSIS, "resume_text": SAMPLE_RESUME, "company_name": "TechCorp"}
@@ -593,7 +593,7 @@ class TestJobPilotFlow:
         assert "https://example.com/jobs/42" in captured["JDParser"]
 
     @pytest.mark.asyncio
-    async def test_flow_with_resume_path_builds_correct_prompt(self):
+    async def test_flow_with_resume_path_builds_correct_prompt(self, tmp_path):
         """When resume_path is given, resume prompt should instruct agent to use doc_parser."""
         captured: dict[str, str] = {}
 
@@ -602,9 +602,10 @@ class TestJobPilotFlow:
             return "ok"
 
         flow = JobPilotFlow.create()
-        ctx = {"jd_text": SAMPLE_JD, "resume_path": "/tmp/resume.pdf"}
+        resume_path = str(tmp_path / "resume.pdf")
+        ctx = {"jd_text": SAMPLE_JD, "resume_path": resume_path}
         with patch.object(JobPilotFlow, "_run_fresh_agent", side_effect=mock_run):
             await flow.execute(json.dumps(ctx))
 
         assert "doc_parser" in captured["ResumeOptimizer"]
-        assert "/tmp/resume.pdf" in captured["ResumeOptimizer"]
+        assert resume_path in captured["ResumeOptimizer"]

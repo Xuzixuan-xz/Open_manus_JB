@@ -224,7 +224,7 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        report = asyncio.run(run_jobpilot(ctx, output_path=args.output if args else None))
+        report = asyncio.run(run_jobpilot(ctx, output_path=args.output if args.output else None))
         print("\n" + "=" * 60)
         print("✅ JobPilot pipeline complete!")
         print("=" * 60)
