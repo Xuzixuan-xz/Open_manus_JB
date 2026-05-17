@@ -1,0 +1,1 @@
+# JobPilot agent prompts package

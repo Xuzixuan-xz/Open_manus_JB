@@ -66,6 +66,23 @@ class RunflowSettings(BaseModel):
     )
 
 
+class JobPilotSettings(BaseModel):
+    """Configuration for the JobPilot multi-agent job application assistant."""
+
+    enable: bool = Field(default=True, description="Enable the JobPilot workflow")
+    output_dir: str = Field(
+        default="workspace/jobpilot",
+        description="Directory for saved JobPilot reports (relative to project root)",
+    )
+    max_interview_questions: int = Field(
+        default=10, description="Maximum number of interview questions to generate"
+    )
+    language: str = Field(
+        default="zh",
+        description="Output language preference: 'zh' (Chinese), 'en' (English), or 'both'",
+    )
+
+
 class BrowserSettings(BaseModel):
     headless: bool = Field(False, description="Whether to run browser in headless mode")
     disable_security: bool = Field(
@@ -185,6 +202,9 @@ class AppConfig(BaseModel):
     mcp_config: Optional[MCPSettings] = Field(None, description="MCP configuration")
     run_flow_config: Optional[RunflowSettings] = Field(
         None, description="Run flow configuration"
+    )
+    jobpilot_config: Optional[JobPilotSettings] = Field(
+        None, description="JobPilot configuration"
     )
     daytona_config: Optional[DaytonaSettings] = Field(
         None, description="Daytona configuration"
@@ -310,6 +330,13 @@ class Config:
             run_flow_settings = RunflowSettings(**run_flow_config)
         else:
             run_flow_settings = RunflowSettings()
+
+        jobpilot_config = raw_config.get("jobpilot")
+        if jobpilot_config:
+            jobpilot_settings = JobPilotSettings(**jobpilot_config)
+        else:
+            jobpilot_settings = JobPilotSettings()
+
         config_dict = {
             "llm": {
                 "default": default_settings,
@@ -323,6 +350,7 @@ class Config:
             "search_config": search_settings,
             "mcp_config": mcp_settings,
             "run_flow_config": run_flow_settings,
+            "jobpilot_config": jobpilot_settings,
             "daytona_config": daytona_settings,
         }
 
@@ -357,6 +385,11 @@ class Config:
     def run_flow_config(self) -> RunflowSettings:
         """Get the Run Flow configuration"""
         return self._config.run_flow_config
+
+    @property
+    def jobpilot_config(self) -> JobPilotSettings:
+        """Get the JobPilot configuration"""
+        return self._config.jobpilot_config
 
     @property
     def workspace_root(self) -> Path:
