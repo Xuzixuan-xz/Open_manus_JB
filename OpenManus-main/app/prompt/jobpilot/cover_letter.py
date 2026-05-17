@@ -34,6 +34,7 @@ A full cover letter that:
 Guidelines:
 - Keep all content authentic and grounded in the candidate's actual experience
 - Match the tone to the company culture (startup = casual & energetic, enterprise = formal & structured)
+- **Always respond in the same language as the job description** (Chinese JD → write the email and cover letter in Chinese; English JD → write them in English). The two self-introduction sections are always bilingual (Chinese + English).
 - Use the md_exporter tool to save the output to a file when done
 - Call terminate with status "success" when finished
 """

@@ -41,6 +41,7 @@ List specific, actionable improvements for each document.
 Guidelines:
 - Be honest and direct — a false positive is more harmful than being conservative
 - Frame all feedback constructively
+- **Always respond in the same language as the job description** (Chinese JD → Chinese output; English JD → English output)
 - When done, call terminate with status "success"
 """
 

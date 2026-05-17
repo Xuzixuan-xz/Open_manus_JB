@@ -204,6 +204,24 @@ class JobPilotFlow(BaseFlow):
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _detect_language(text: str) -> str:
+        """Return 'zh' if *text* contains a significant proportion of CJK characters, else 'en'."""
+        if not text:
+            return "en"
+        cjk_count = sum(
+            1 for ch in text if "\u4e00" <= ch <= "\u9fff" or "\u3400" <= ch <= "\u4dbf"
+        )
+        return "zh" if cjk_count / max(len(text), 1) > 0.05 else "en"
+
+    @staticmethod
+    def _lang_instruction(ctx: Dict[str, str]) -> str:
+        """Return a language instruction line based on the detected JD language."""
+        lang = ctx.get("lang", "en")
+        if lang == "zh":
+            return "\n\n**语言要求：请用中文（简体）输出你的全部分析和建议，所有标题、正文、示例均使用中文。**"
+        return "\n\n**Language requirement: Respond entirely in English.**"
+
+    @staticmethod
     def _parse_input(input_text: str) -> Dict[str, str]:
         """Parse the input text into a context dict."""
         ctx: Dict[str, str] = {}
@@ -211,12 +229,13 @@ class JobPilotFlow(BaseFlow):
             data = json.loads(input_text)
             if isinstance(data, dict):
                 ctx = {k: str(v) for k, v in data.items()}
-                return ctx
         except (json.JSONDecodeError, ValueError):
-            pass
+            # Plain text — treat the whole thing as the JD
+            ctx["jd_text"] = input_text.strip()
 
-        # Plain text — treat the whole thing as the JD
-        ctx["jd_text"] = input_text.strip()
+        # Detect language from JD text (or URL hint) and store in context
+        jd_sample = ctx.get("jd_text") or ctx.get("jd_url") or ""
+        ctx["lang"] = JobPilotFlow._detect_language(jd_sample)
         return ctx
 
     # ------------------------------------------------------------------
@@ -248,6 +267,7 @@ class JobPilotFlow(BaseFlow):
             "\nOutput a JSON object with keys: required_skills, nice_to_have, "
             "responsibilities, culture_keywords, seniority."
         )
+        parts.append(JobPilotFlow._lang_instruction(ctx))
         return "\n".join(parts)
 
     @staticmethod
@@ -268,6 +288,7 @@ class JobPilotFlow(BaseFlow):
             parts.append(
                 "\n(No resume provided — provide a general analysis based on the JD alone.)"
             )
+        parts.append(JobPilotFlow._lang_instruction(ctx))
         return "\n".join(parts)
 
     @staticmethod
@@ -282,6 +303,7 @@ class JobPilotFlow(BaseFlow):
             f"\n=== JD ANALYSIS ===\n{ctx.get('jd_analysis', 'N/A')}\n=== END JD ANALYSIS ==="
             f"{resume_section}"
             f"\n\nCompany: {ctx.get('company_name', 'Unknown')}"
+            f"{JobPilotFlow._lang_instruction(ctx)}"
         )
 
     @staticmethod
@@ -303,6 +325,12 @@ class JobPilotFlow(BaseFlow):
             "\nAfter generating the content, use the md_exporter tool to save it "
             "with filename 'cover_letter_and_email'."
         )
+        # For cover letters the self-intro is intentionally bilingual;
+        # the framing/instructions should still follow the JD language.
+        if ctx.get("lang") == "zh":
+            parts.append(
+                "\n\n**语言要求：除双语自我介绍部分外（中文版 + 英文版），其余所有内容（邮件、求职信、章节标题等）请用中文撰写。**"
+            )
         return "\n".join(parts)
 
     @staticmethod
@@ -314,6 +342,7 @@ class JobPilotFlow(BaseFlow):
             f"=== RESUME OPTIMIZATION REPORT ===\n{ctx.get('resume_report', 'N/A')}\n"
             f"=== INTERVIEW KIT ===\n{ctx.get('interview_kit', 'N/A')}\n"
             f"=== APPLICATION DOCUMENTS ===\n{ctx.get('application_docs', 'N/A')}\n"
+            f"{JobPilotFlow._lang_instruction(ctx)}"
         )
 
     # ------------------------------------------------------------------
